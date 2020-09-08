@@ -5,6 +5,7 @@
 #include "server/asio.h"
 #include <filesystem>
 #include <fstream>
+#include <iostream>
 
 namespace webcrown {
 namespace server {
@@ -22,6 +23,9 @@ HandleClientRequest::HttpStatusTable =
 
 
 void HandleClientRequest::startHandling() {
+  std::cout
+    << "Start handling...\n";
+
   asio::async_read_until(
     *ActiveSocket.get(),
     RequestBuf,
@@ -36,6 +40,11 @@ void HandleClientRequest::onRequestReceived(asio::error_code const& Ec,
 					    std::size_t BytesTransferred) {
   if(Ec.value() != 0) {
     // TODO: Logger
+    std::cout
+      << "Error on async_read_until. "
+      << "Message: "
+      << Ec.message()
+      << "\n";
     assert(Ec.value() != 0 && "Error on async_read_until.");
     assert(Ec.value() == asio::error::not_found && "No delimiter has been found. Return http 413");
 
@@ -56,6 +65,11 @@ void HandleClientRequest::onRequestReceived(asio::error_code const& Ec,
   std::istringstream RequestLineStream(RequestLine);
   RequestLineStream >> RequestMethod;
 
+  std::cout
+    << "RequestLine ==> "
+    << RequestLine
+    << "\n";
+
   // Add support to GET Method
   if(RequestMethod.compare("GET") != 0) {
     // Unsupported method
@@ -71,10 +85,16 @@ void HandleClientRequest::onRequestReceived(asio::error_code const& Ec,
   RequestLineStream >> RequestHttpVersion;
 
   if(RequestHttpVersion.compare("HTTP/1.1") != 0) {
+    std::cout
+      << "Unsupported http version. "
+      << "Message: "
+      << Ec.message()
+      << "\n";
+
     // Unsupported HTTP versionor bad request.
     ResponseStatusCode = 505;
-    // TODO: sendresponse
-
+    sendResponse();
+    
     return;
   }
 
@@ -94,10 +114,17 @@ void HandleClientRequest::onHeadersReceived(asio::error_code const& Ec,
 					    std::size_t BytesTransferred) {
   if(Ec.value() != 0) {
     // TODO: Logger
+      std::cout
+	<< "onHeadersReceived:: Error on async_read_until. "
+	<< "Message: "
+	<< Ec.message()
+	<< "\n";
+
     assert(Ec.value() != 0 && "Error on async_read_until headers");
     assert(Ec.value() == asio::error::not_found && "No delimiter has been found. Return http 413");
 
     onFinish();
+    return;
   }
 
   // Parse and store headers.
@@ -127,10 +154,14 @@ void HandleClientRequest::processRequest() {
   auto CurPath = std::filesystem::current_path();
 
   std::cout << "Current path: " << CurPath.string() + "\n";
-  std::string ResourceFilepath = CurPath.string() + "index.html";
+  std::string ResourceFilepath = CurPath.string() + "/index.html";
 
   std::ifstream ResourceFstream(ResourceFilepath, std::ios_base::binary);
   if(!ResourceFstream.is_open()) {
+    std::cout
+      << "Failed to open file "
+      << ResourceFilepath
+      << "\n";
     // Could no open the file
     // somethinb bad has happened.
     ResponseStatusCode = 500;
@@ -147,7 +178,7 @@ void HandleClientRequest::processRequest() {
   ResourceFstream.seekg(std::ifstream::beg);
   ResourceFstream.read(ResourceBuffer.get(), ResourceSizeBytes);
 
-  ResponseHeaders += std::string("content-length") + 
+  ResponseHeaders += std::string("content-length") +
     ": "+
     std::to_string(ResourceSizeBytes) +
     "\r\n";
@@ -160,6 +191,12 @@ void HandleClientRequest::sendResponse() {
 
   if (Ec.value() != 0) {
     // TODO: logger
+    std::cout
+      << "sendResponse:: Error on shutdown socket. "
+      << "Message: "
+      << Ec.message()
+      << "\n";
+
     assert(Ec.value() != 0 && "Error on shutdown socket.");
     return;
   }
@@ -171,6 +208,11 @@ void HandleClientRequest::sendResponse() {
     "\r\n";
 
   ResponseHeaders += "\r\n";
+
+  std::cout
+    << "Response headers\n\n*"
+    << ResponseHeaders
+    << "*\n\n";
 
   std::vector<asio::const_buffer> ResponseBuffers;
   ResponseBuffers.push_back(asio::buffer(ResponseStatusLine));

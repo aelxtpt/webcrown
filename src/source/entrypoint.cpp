@@ -9,15 +9,14 @@ using std::shared_ptr;
 int main() {
   try {
     const unsigned short PortNum = 2222;
+    unsigned int ThreadPoolSize = std::thread::hardware_concurrency();
 
     std::cout << "Webcrown 0.0.1\n";
     std::cout << "Running on port: " << PortNum << "\n";
+    std::cout << "Thread Pool Size: " << ThreadPoolSize << "\n";
 
     webcrown::server::SimpleHttpServer Server;
-
-    unsigned int ThreadPoolSize = std::thread::hardware_concurrency();
-
-    Server.start(8888, ThreadPoolSize);
+    Server.start(PortNum, ThreadPoolSize);
 
     std::this_thread::sleep_for(std::chrono::seconds(60));
 

@@ -67,6 +67,8 @@ void HttpAcceptor::processNextRequest() {
   std::shared_ptr<asio::ip::tcp::socket> Sock(
     new asio::ip::tcp::socket(Ioc));
 
+  std::cout << "Waiting for the next request..\n";
+
   SocketAcceptor.async_accept(
     *Sock.get(),
     [this, Sock](asio::error_code const& Ec)
@@ -87,6 +89,12 @@ void HttpAcceptor::onAccept(asio::error_code const& Ec,
 				std::shared_ptr<asio::ip::tcp::socket> Sock) {
   if(Ec.value() != 0) {
     // TODO: logger
+    std::cout 
+      << "Error on onAccept. "
+      << "Message: "
+      << Ec.message()
+      << "\n";
+
     assert(Ec.value() != 0 && "Error on async_accept");
     return;
   }

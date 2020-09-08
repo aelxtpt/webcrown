@@ -132,26 +132,28 @@ public:
     Acceptor->initialize();
     Acceptor->run();
 
+    Ioc.run();
+
     // Create specified numberof threads and
     // add them to the pool
-    for(unsigned int i = 0; i < ThreadPoolSize; ++i) {
-      std::unique_ptr<std::thread> th(
-	new std::thread([this]()
-      {
-	Ioc.run();
-      }));
+   // for(unsigned int i = 0; i < ThreadPoolSize; ++i) {
+   //   std::unique_ptr<std::thread> th(
+   //     new std::thread([this]()
+   //   {
+   //     Ioc.run();
+   //   }));
 
-      ThreadPool.push_back(std::move(th));
-    }
+   //   ThreadPool.push_back(std::move(th));
+   // }
   }
 
   void stop() {
     Acceptor->stop();
     Ioc.stop();
 
-    for(auto const& th : ThreadPool) {
-      th->join();
-    }
+    //for(auto const& th : ThreadPool) {
+    //  th->join();
+    //}
   }
 };
 
