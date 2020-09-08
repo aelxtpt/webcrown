@@ -7,27 +7,23 @@
 using std::shared_ptr;
 
 int main() {
-  try
-  {
-    constexpr unsigned short port_num = 3333;
-    asio::io_context ioctx;
+  try {
+    const unsigned short PortNum = 2222;
 
-    asio::ip::tcp protocol = asio::ip::tcp::v4();
+    std::cout << "Webcrown 0.0.1\n";
+    std::cout << "Running on port: " << PortNum << "\n";
 
-    asio::ip::tcp::acceptor acceptor(ioctx);
+    webcrown::server::SimpleHttpServer Server;
 
-    asio::error_code ec;
+    unsigned int ThreadPoolSize = std::thread::hardware_concurrency();
 
-    acceptor.open(protocol, ec);
+    Server.start(8888, ThreadPoolSize);
 
-    if(ec.value() != 0) {
-      std::cout << "Failed to open the acceptor socket!"
-        << " Error code = "
-        << ec.value() << ". Message: "
-        << ec.message();
-    }
+    std::this_thread::sleep_for(std::chrono::seconds(60));
 
-    ioctx.run();
+    Server.stop();
+
+    std::cout << "Shutdown aplication" << std::endl;
 
   }
   catch(std::exception& ex)
