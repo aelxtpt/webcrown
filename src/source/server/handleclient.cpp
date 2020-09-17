@@ -203,7 +203,7 @@ void HandleClientRequest::sendResponse() {
 
   auto StatusLine = HttpStatusTable.at(ResponseStatusCode);
 
-  auto ResponseStatusLine = std::string("HTTP/1.1") +
+  auto ResponseStatusLine = std::string("HTTP/1.1 ") +
     StatusLine + 
     "\r\n";
 

@@ -75,14 +75,6 @@ void HttpAcceptor::processNextRequest() {
     {
       onAccept(Ec, Sock);
     });
-
-  // Handle next connection
- // if(!IsStoped.load()) {
- //   //processNextRequest();
- // }
- // else {
- //   SocketAcceptor.close();
- // }
 }
 
 void HttpAcceptor::onAccept(asio::error_code const& Ec,
@@ -100,7 +92,15 @@ void HttpAcceptor::onAccept(asio::error_code const& Ec,
   }
 
   // TODO: ponteiro solto?
-  (new HandleClientRequest(Sock))->startHandling();
+  (new HandleClientRequest(Sock))->startHandling();  
+ 
+  // Handle next connection
+  if(!IsStoped.load()) {
+    processNextRequest();
+  }
+  else {
+    SocketAcceptor.close();
+  }
 }
 
 }}
