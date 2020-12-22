@@ -2,3 +2,5 @@ build/
 compile_commands.json
 *.swp
 .clangd/
+.idea/
+*.idea
