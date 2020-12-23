@@ -122,6 +122,8 @@ void SslServer::accept()
     }
 
     // create new session to accept
+    // the earlier session is stored in sessions_. It is not lose, because
+    // is a shared_ptr.
     session_ = std::make_shared<SslSession>(++last_generated_session_id_, self);
 
     logger_->info("[SslServer][accept][accept_handler] Session {} was created",
