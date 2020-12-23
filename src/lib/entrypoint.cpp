@@ -24,7 +24,7 @@ using std::shared_ptr;
 
 int main() {
   try {
-    const unsigned short port_num = 2222;
+    const unsigned short port_num = 8001;
 
     webcrown::WebCrown crown("127.0.0.1", port_num);
     crown.service()->start();
@@ -34,8 +34,17 @@ int main() {
       pthread_yield();
     }
 
-    std::cout << "iniciando server...\n";
     crown.server()->start();
+
+    while (!crown.server()->is_started())
+    {
+      pthread_yield();
+    }
+
+    for(;;)
+    {
+      std::this_thread::sleep_for(std::chrono::seconds(1));
+    }
 
     crown.service()->stop();
 

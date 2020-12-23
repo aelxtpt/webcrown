@@ -6,6 +6,7 @@ namespace webcrown {
 namespace server {
 
 SslSession::SslSession(
+    uint64_t session_id,
     const std::shared_ptr<SslServer>& server)
   : bytes_pending_(0)
   , bytes_sending_(0)
@@ -15,6 +16,9 @@ SslSession::SslSession(
   , io_service_(server_->service()->asio_service())
   , context_(asio::ssl::context::sslv23)
   , stream_socket_(*io_service_, context_)
+  , connected_(false)
+  , handshaked_(false)
+  , session_id_(session_id)
 {
 }
 

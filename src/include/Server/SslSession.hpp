@@ -39,15 +39,16 @@ class SslSession
   std::atomic<bool> handshaked_;
 
   // The session ID
-  uint64_t session_id;
+  uint64_t session_id_;
 
   // Receive Buffer
   std::vector<uint8_t> receive_buffer_;
 public:
   /// Initialize the session with a given server
   ///
+  /// \param session_id - unique identifier of the session
   /// \param server - Connected server
-  explicit SslSession(std::shared_ptr<SslServer> const& server);
+  explicit SslSession(uint64_t session_id, std::shared_ptr<SslServer> const& server);
 
   SslSession(SslSession const&) = delete;
   SslSession(SslSession &&) = delete;
@@ -74,6 +75,8 @@ public:
 
   /// Return true if the session is handshaked
   bool is_handshaked() const noexcept { return handshaked_; }
+
+  uint64_t session_id() const noexcept { return session_id_; }
 
   asio::ssl::stream<asio::ip::tcp::socket>::next_layer_type& socket() noexcept
   { return stream_socket_.next_layer(); }

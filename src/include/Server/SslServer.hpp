@@ -1,14 +1,16 @@
 #pragma once
 #include "Server/SslSession.hpp"
 #include <memory>
+#include <shared_mutex>
+#include <map>
 
 namespace webcrown {
 namespace server {
 
 /// This class
-class SslServer : std::enable_shared_from_this<SslServer>
+class SslServer : public std::enable_shared_from_this<SslServer>
 {
-  bool started_;
+  std::atomic<bool> started_;
 
   asio::ip::tcp::acceptor socket_acceptor_;
   std::shared_ptr<asio::io_service> io_service_;
@@ -30,6 +32,11 @@ class SslServer : std::enable_shared_from_this<SslServer>
   // Server config
   std::string address_;
   uint16_t port_number_;
+
+  // Threading sessions
+  std::shared_mutex sessions_lock_;
+  std::map<uint64_t, std::shared_ptr<SslSession>> sessions_;
+  std::atomic<uint64_t> last_generated_session_id_;
 public:
 
   /// Initialize SSL server with a given Asio service, SSL Context and port number and address
@@ -53,6 +60,14 @@ public:
 
 private:
   void accept();
+
+  /// Register a new session
+  void register_session();
+
+  /// Unregister the given session
+  ///
+  /// \param id - the session id
+  void unregister_session(uint64_t id);
 };
 
 }}

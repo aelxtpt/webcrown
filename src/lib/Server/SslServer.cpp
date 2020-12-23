@@ -20,11 +20,14 @@ SslServer::SslServer(
   , bytes_received_(0)
   , address_(address)
   , port_number_(port_num)
+  , last_generated_session_id_(0)
 {
 }
 
 bool SslServer::start()
 {
+  logger_->info("[SslServer][start] Starting SSL Server");
+
   assert(!is_started() && "SSL Server is already started");
   if (is_started())
   {
@@ -32,26 +35,8 @@ bool SslServer::start()
     return false;
   }
 
-  asio::ip::address ip_address = asio::ip::address::from_string("127.0.0.1");
-  asio::ip::tcp::endpoint endpoint(ip_address, port_number_);
-
-  auto endpoint_family = endpoint.protocol().family();
-  auto endpoint_protocol = endpoint.protocol().protocol();
-
-  logger_->info(R"([SslServer][start]
-The endpoint ip_address is {}
-port number is {}
-protocol family is {}
-protocol type is {}
-protocol {})",
-                ip_address.to_string(),
-                port_number_,
-                endpoint_family == 2 ? "IP protocol family" : std::to_string(endpoint_family),
-                endpoint.protocol().type(),
-                endpoint_protocol == 6 ? "Transmission Control Protocol" : std::to_string(endpoint_protocol));
-
   // Post the start handler
-  auto start_handler = [this, &endpoint]()
+  auto start_handler = [this]()
   {
     if (is_started())
     {
@@ -60,13 +45,22 @@ protocol {})",
     }
 
     asio::error_code ec;
+    asio::ip::tcp::endpoint endpoint(asio::ip::make_address(address_, ec), port_number_);
+
+    if (ec.value())
+    {
+      logger_->error("[SslServer][start][start_handler] Error on make ip address. Code: {}. Message: {}",
+                     ec.value(),
+                     ec.message());
+      return;
+    }
 
     // Open socket
     socket_acceptor_.open(endpoint.protocol(), ec);
 
     if (ec.value())
     {
-      logger_->error("[SslServer][start] Error on open acceptor socket. Code: {}. Message: {}",
+      logger_->error("[SslServer][start][start_handler] Error on open acceptor socket. Code: {}. Message: {}",
                      ec.value(),
                      ec.message());
 
@@ -78,7 +72,7 @@ protocol {})",
     socket_acceptor_.bind(endpoint, ec);
     if (ec.value())
     {
-      logger_->error("[SslServer][start] Error on bind acceptor socket. Code: {}. Message: {}",
+      logger_->error("[SslServer][start][start_handler] Error on bind acceptor socket. Code: {}. Message: {}",
                      ec.value(),
                      ec.message());
 
@@ -108,7 +102,9 @@ protocol {})",
 
 void SslServer::accept()
 {
-  assert(!is_started() && "SSL Server is not started");
+  logger_->info("[SslServer][accept] Initializing the server accept");
+
+  assert(is_started() && "SSL Server is not started");
   if (!is_started())
   {
     logger_->warn("[SslServer][accept] SSL Server is not started");
@@ -121,23 +117,70 @@ void SslServer::accept()
   {
     if (!is_started())
     {
-      logger_->warn("[SslServer][accept][accept_handler] SSL Server is not started");
+      logger_->error("[SslServer][accept][accept_handler] SSL Server is not started");
       return;
     }
 
-    session_ = std::make_shared<SslSession>(self);
+    // create new session to accept
+    session_ = std::make_shared<SslSession>(++last_generated_session_id_, self);
+
+    logger_->info("[SslServer][accept][accept_handler] Session {} was created",
+                  session_->session_id());
 
     auto async_accept_handler = [this, self](std::error_code ec)
     {
+      if (!is_started())
+      {
+        logger_->error("[SslServer][accept][accept_handler][async_accept_handler] SSL Server is not started");
+        return;
+      }
 
-        // Connect a new session
+      if (ec)
+      {
+        logger_->error("[SslServer][accept][accept_handler][async_accept_handler] Error on async_accept. Code: {}. Message: {}",
+                       ec.value(),
+                       ec.message());
+        return;
+      }
 
+      // Register a new session
+      register_session();
+
+      // Connect a new session
+      session_->connect();
+
+      // Perform the next server accept
+      accept();
     };
 
+    // Waiting for the next request
+    logger_->info("[SslServer][accept][accept_handler] Waiting for the next request...");
     socket_acceptor_.async_accept(session_->socket(), async_accept_handler);
   };
 
+  // Dispatch accept handler
+  io_service_->dispatch(accept_handler);
+}
 
+void SslServer::register_session()
+{
+  std::unique_lock<std::shared_mutex> m(sessions_lock_);
+
+  // Register a new session
+  sessions_.emplace(session_->session_id(), session_);
+}
+
+void SslServer::unregister_session(uint64_t id)
+{
+  std::unique_lock<std::shared_mutex> m(sessions_lock_);
+
+  // Try to find the given session
+  auto it = sessions_.find(id);
+  if (it != sessions_.end())
+  {
+    // Erase the session
+    sessions_.erase(it);
+  }
 }
 
 }}
