@@ -29,6 +29,7 @@ void SslSession::connect()
   bytes_received_ = 0;
   bytes_sent_ = 0;
 
+  // Update the connected flag
   connected_ = true;
 }
 

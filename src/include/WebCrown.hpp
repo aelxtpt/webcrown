@@ -48,7 +48,7 @@ private:
   virtual void initialize_logger()
   {
     spdlog::set_pattern("[%H:%M:%S %z] [%^%L%$] [thread %t] %v");
-    spdlog::set_level(spdlog::level::info);
+    spdlog::set_level(spdlog::level::debug);
 
     // Flush all *registered* loggers using a worker thread every 1 seconds.
     // note: registered loggers *must* be thread safe for this to work correctly!

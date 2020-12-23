@@ -26,12 +26,12 @@ SslServer::SslServer(
 
 bool SslServer::start()
 {
-  logger_->info("[SslServer][start] Starting SSL Server");
+  logger_->debug("[SslServer][start] Starting SSL Server");
 
   assert(!is_started() && "SSL Server is already started");
   if (is_started())
   {
-    logger_->warn("[SslServer][start] SSL Server is already started");
+    logger_->error("[SslServer][start] SSL Server is already started");
     return false;
   }
 
@@ -40,7 +40,7 @@ bool SslServer::start()
   {
     if (is_started())
     {
-      logger_->warn("[SslServer][start][start_handler] SSL Server is already started");
+      logger_->error("[SslServer][start][start_handler] SSL Server is already started");
       return;
     }
 
@@ -102,12 +102,12 @@ bool SslServer::start()
 
 void SslServer::accept()
 {
-  logger_->info("[SslServer][accept] Initializing the server accept");
+  logger_->debug("[SslServer][accept] Initializing the server accept");
 
   assert(is_started() && "SSL Server is not started");
   if (!is_started())
   {
-    logger_->warn("[SslServer][accept] SSL Server is not started");
+    logger_->error("[SslServer][accept] SSL Server is not started");
     return;
   }
 
@@ -124,9 +124,9 @@ void SslServer::accept()
     // create new session to accept
     // the earlier session is stored in sessions_. It is not lose, because
     // is a shared_ptr.
-    session_ = std::make_shared<SslSession>(++last_generated_session_id_, self);
+    session_ = create_session(++last_generated_session_id_, self);
 
-    logger_->info("[SslServer][accept][accept_handler] Session {} was created",
+    logger_->debug("[SslServer][accept][accept_handler] Session {} was created",
                   session_->session_id());
 
     auto async_accept_handler = [this, self](std::error_code ec)
@@ -156,12 +156,17 @@ void SslServer::accept()
     };
 
     // Waiting for the next request
-    logger_->info("[SslServer][accept][accept_handler] Waiting for the next request...");
+    logger_->debug("[SslServer][accept][accept_handler] Waiting for the next request...");
     socket_acceptor_.async_accept(session_->socket(), async_accept_handler);
   };
 
   // Dispatch accept handler
   io_service_->dispatch(accept_handler);
+}
+
+std::shared_ptr<SslSession> SslServer::create_session(uint64_t session_id, std::shared_ptr<SslServer> const& server)
+{
+  return std::make_shared<SslSession>(session_id, server);
 }
 
 void SslServer::register_session()

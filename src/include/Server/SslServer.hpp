@@ -7,14 +7,14 @@
 namespace webcrown {
 namespace server {
 
-/// This class
+/// This class is responsible to connect,
+/// disconnect and manage SSL Sessions
 class SslServer : public std::enable_shared_from_this<SslServer>
 {
   std::atomic<bool> started_;
 
   asio::ip::tcp::acceptor socket_acceptor_;
   std::shared_ptr<asio::io_service> io_service_;
-
 
   std::shared_ptr<spdlog::logger> logger_;
 
@@ -50,9 +50,18 @@ public:
     uint16_t port_num,
     std::string_view address);
 
+  SslServer(SslServer const&) = delete;
+  SslServer(SslServer&&) = delete;
+
+  SslServer& operator=(SslServer const&) = delete;
+  SslServer& operator=(SslServer&&) = delete;
+
+  virtual ~SslServer() = default;
+
   /// Start the server
   bool start();
 
+  /// Check if the server is started
   bool is_started() const noexcept { return started_; }
 
   // Get the Asio Service
@@ -61,7 +70,16 @@ public:
 private:
   void accept();
 
+  /// Create a new session
+  ///
+  /// \param session_id - unique identifier for the session
+  /// \param server - the connected server
+  virtual std::shared_ptr<SslSession> create_session(uint64_t session_id, std::shared_ptr<SslServer> const& server);
+
   /// Register a new session
+  ///
+  /// A session is responsible to handle
+  /// incoming requests and send response to them
   void register_session();
 
   /// Unregister the given session
