@@ -1,4 +1,4 @@
-#include "Server/HttpRequest.hpp"
+#include "Server/Http/HttpRequest.hpp"
 
 namespace webcrown {
 namespace http {

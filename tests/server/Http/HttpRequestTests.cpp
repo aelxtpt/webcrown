@@ -1,5 +1,5 @@
 #include <gmock/gmock.h>
-#include "Server/HttpRequest.hpp"
+#include "Server/Http/HttpRequest.hpp"
 #include <memory>
 
 class HttpRequestTests : public testing::Test

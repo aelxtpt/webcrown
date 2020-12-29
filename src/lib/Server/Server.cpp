@@ -1,11 +1,11 @@
-#include "Server/SslServer.hpp"
+#include "Server/Server.hpp"
 #include <assert.h>
 
 
 namespace webcrown {
 namespace server {
 
-SslServer::SslServer(
+Server::Server(
   std::shared_ptr<spdlog::logger> logger,
   std::shared_ptr<Service> const& service,
   uint16_t port_num,
@@ -24,7 +24,7 @@ SslServer::SslServer(
 {
 }
 
-bool SslServer::start()
+bool Server::start()
 {
   logger_->debug("[SslServer][start] Starting SSL Server");
 
@@ -100,7 +100,7 @@ bool SslServer::start()
   return true;
 }
 
-void SslServer::accept()
+void Server::accept()
 {
   logger_->debug("[SslServer][accept] Initializing the server accept");
 
@@ -164,13 +164,13 @@ void SslServer::accept()
   io_service_->dispatch(accept_handler);
 }
 
-std::shared_ptr<SslSession> SslServer::create_session(
-    uint64_t session_id, std::shared_ptr<SslServer> const& server, std::shared_ptr<spdlog::logger> const& logger)
+std::shared_ptr<Session> Server::create_session(
+    uint64_t session_id, std::shared_ptr<Server> const& server, std::shared_ptr<spdlog::logger> const& logger)
 {
-  return std::make_shared<SslSession>(session_id, server, logger);
+  return std::make_shared<Session>(session_id, server, logger);
 }
 
-void SslServer::register_session()
+void Server::register_session()
 {
   std::unique_lock<std::shared_mutex> m(sessions_lock_);
 
@@ -178,7 +178,7 @@ void SslServer::register_session()
   sessions_.emplace(session_->session_id(), session_);
 }
 
-void SslServer::unregister_session(uint64_t id)
+void Server::unregister_session(uint64_t id)
 {
   std::unique_lock<std::shared_mutex> m(sessions_lock_);
 

@@ -27,27 +27,14 @@ int main() {
     const unsigned short port_num = 8001;
 
     webcrown::WebCrown crown("127.0.0.1", port_num);
-    crown.service()->start();
-
-    while (!crown.service()->is_started())
-    {
-      pthread_yield();
-    }
-
-    crown.server()->start();
-
-    while (!crown.server()->is_started())
-    {
-      pthread_yield();
-    }
+    crown.start();
 
     for(;;)
     {
       std::this_thread::sleep_for(std::chrono::seconds(1));
     }
 
-    crown.service()->stop();
-
+    crown.stop();
 
     std::cout << "fim\n";
 

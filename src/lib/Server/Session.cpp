@@ -1,13 +1,13 @@
-#include "Server/SslSession.hpp"
-#include "Server/SslServer.hpp"
+#include "Server/Session.hpp"
+#include "Server/Server.hpp"
 
 
 namespace webcrown {
 namespace server {
 
-SslSession::SslSession(
+Session::Session(
     uint64_t session_id,
-    std::shared_ptr<SslServer> const& server,
+    std::shared_ptr<Server> const& server,
     std::shared_ptr<spdlog::logger> const& logger)
   : bytes_pending_(0)
   , bytes_sending_(0)
@@ -25,7 +25,7 @@ SslSession::SslSession(
 {
 }
 
-void SslSession::connect()
+void Session::connect()
 {
   bytes_pending_ = 0;
   bytes_sending_ = 0;
@@ -71,7 +71,7 @@ void SslSession::connect()
   stream_socket_.async_handshake(asio::ssl::stream_base::server, async_handshake_handler);
 }
 
-bool SslSession::disconnect(std::error_code error)
+bool Session::disconnect(std::error_code error)
 {
   if (!is_connected())
   {
@@ -114,7 +114,7 @@ bool SslSession::disconnect(std::error_code error)
   return true;
 }
 
-bool SslSession::disconnect_async(bool dispatch)
+bool Session::disconnect_async(bool dispatch)
 {
   if (!is_connected())
   {
@@ -156,7 +156,7 @@ bool SslSession::disconnect_async(bool dispatch)
   return true;
 }
 
-void SslSession::try_receive()
+void Session::try_receive()
 {
   if (receiving_)
   {

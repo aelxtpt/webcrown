@@ -1,6 +1,6 @@
 #pragma once
 #include "Server/Service.hpp"
-#include "Server/SslServer.hpp"
+#include "Server/Http/HttpServer.hpp"
 
 #include <spdlog/spdlog.h>
 #include <spdlog/sinks/stdout_color_sinks.h>
@@ -11,7 +11,7 @@ namespace webcrown {
 class WebCrown
 {
   std::shared_ptr<server::Service> service_;
-  std::shared_ptr<server::SslServer> server_;
+  std::shared_ptr<server::http::HttpServer> server_;
 
   std::shared_ptr<spdlog::logger> logger_;
 public:
@@ -23,7 +23,7 @@ public:
     initialize_logger();
 
     service_ = std::make_shared<server::Service>(logger_);
-    server_ = std::make_shared<server::SslServer>(
+    server_ = std::make_shared<server::http::HttpServer>(
           logger_,
           service_,
           port_number,
@@ -39,9 +39,30 @@ public:
   virtual ~WebCrown() = default;
 
   std::shared_ptr<server::Service>& service() noexcept { return service_; }
+  std::shared_ptr<server::http::HttpServer>& server() noexcept { return server_; }
 
-  std::shared_ptr<server::SslServer>& server() noexcept { return server_; }
 
+  virtual void start()
+  {
+    service_->start();
+
+    while (!service_->is_started())
+    {
+      pthread_yield();
+    }
+
+    server_->start();
+
+    while (!server_->is_started())
+    {
+      pthread_yield();
+    }
+  }
+
+  virtual void stop()
+  {
+    service_->stop();
+  }
 private:
 
   /// Initialize the spd logger context

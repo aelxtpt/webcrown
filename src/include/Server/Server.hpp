@@ -1,5 +1,5 @@
 #pragma once
-#include "Server/SslSession.hpp"
+#include "Server/Session.hpp"
 #include <memory>
 #include <shared_mutex>
 #include <map>
@@ -9,7 +9,7 @@ namespace server {
 
 /// This class is responsible to connect,
 /// disconnect and manage SSL Sessions
-class SslServer : public std::enable_shared_from_this<SslServer>
+class Server : public std::enable_shared_from_this<Server>
 {
   std::atomic<bool> started_;
 
@@ -19,7 +19,7 @@ class SslServer : public std::enable_shared_from_this<SslServer>
   std::shared_ptr<spdlog::logger> logger_;
 
   // Server session
-  std::shared_ptr<SslSession> session_;
+  std::shared_ptr<Session> session_;
 
   // Asio Service
   std::shared_ptr<Service> service_;
@@ -35,7 +35,7 @@ class SslServer : public std::enable_shared_from_this<SslServer>
 
   // Threading sessions
   std::shared_mutex sessions_lock_;
-  std::map<uint64_t, std::shared_ptr<SslSession>> sessions_;
+  std::map<uint64_t, std::shared_ptr<Session>> sessions_;
   std::atomic<uint64_t> last_generated_session_id_;
 public:
 
@@ -44,23 +44,23 @@ public:
   /// \param service - Asio service
   /// \param port_num - Port number
   /// \param address - An ipv4 or ipv6 address
-  explicit SslServer(
+  explicit Server(
     std::shared_ptr<spdlog::logger> logger,
     std::shared_ptr<Service> const& service,
     uint16_t port_num,
     std::string_view address);
 
-  SslServer(SslServer const&) = delete;
-  SslServer(SslServer&&) = delete;
+  Server(Server const&) = delete;
+  Server(Server&&) = delete;
 
-  SslServer& operator=(SslServer const&) = delete;
-  SslServer& operator=(SslServer&&) = delete;
+  Server& operator=(Server const&) = delete;
+  Server& operator=(Server&&) = delete;
 
   void add_bytes_pending(uint64_t bytes) noexcept { bytes_pending_ += bytes; }
   void add_bytes_sent(uint64_t bytes) noexcept { bytes_sent_ += bytes; }
   void add_bytes_received(uint64_t bytes) noexcept { bytes_received_ += bytes; }
 
-  virtual ~SslServer() = default;
+  virtual ~Server() = default;
 
   /// Start the server
   bool start();
@@ -82,8 +82,8 @@ private:
   ///
   /// \param session_id - unique identifier for the session
   /// \param server - the connected server
-  virtual std::shared_ptr<SslSession> create_session(
-      uint64_t session_id, std::shared_ptr<SslServer> const& server, std::shared_ptr<spdlog::logger> const& logger);
+  virtual std::shared_ptr<Session> create_session(
+      uint64_t session_id, std::shared_ptr<Server> const& server, std::shared_ptr<spdlog::logger> const& logger);
 
   /// Register a new session
   ///
