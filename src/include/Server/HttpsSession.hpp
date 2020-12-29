@@ -6,7 +6,8 @@ namespace server {
 
 class HttpsSession : public SslSession
 {
-
+public:
+  void on_receive(void const* buffer, std::size_t size) override;
 };
 
 }}

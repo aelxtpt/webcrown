@@ -56,6 +56,10 @@ public:
   SslServer& operator=(SslServer const&) = delete;
   SslServer& operator=(SslServer&&) = delete;
 
+  void add_bytes_pending(uint64_t bytes) noexcept { bytes_pending_ += bytes; }
+  void add_bytes_sent(uint64_t bytes) noexcept { bytes_sent_ += bytes; }
+  void add_bytes_received(uint64_t bytes) noexcept { bytes_received_ += bytes; }
+
   virtual ~SslServer() = default;
 
   /// Start the server
@@ -67,6 +71,10 @@ public:
   // Get the Asio Service
   std::shared_ptr<Service>& service() noexcept { return service_; }
 
+  /// Unregister the given session
+  ///
+  /// \param id - the session id
+  void unregister_session(uint64_t id);
 private:
   void accept();
 
@@ -74,18 +82,14 @@ private:
   ///
   /// \param session_id - unique identifier for the session
   /// \param server - the connected server
-  virtual std::shared_ptr<SslSession> create_session(uint64_t session_id, std::shared_ptr<SslServer> const& server);
+  virtual std::shared_ptr<SslSession> create_session(
+      uint64_t session_id, std::shared_ptr<SslServer> const& server, std::shared_ptr<spdlog::logger> const& logger);
 
   /// Register a new session
   ///
   /// A session is responsible to handle
   /// incoming requests and send response to them
   void register_session();
-
-  /// Unregister the given session
-  ///
-  /// \param id - the session id
-  void unregister_session(uint64_t id);
 };
 
 }}

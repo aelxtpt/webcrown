@@ -55,10 +55,11 @@ private:
     spdlog::flush_every(std::chrono::seconds(1));
 
     auto console_sink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
-    console_sink->set_level(spdlog::level::trace);
-    console_sink->set_pattern("%d/%m/%Y %H:%M:%S.%e.%f [%^%l%$] [thread %t] %v");
+    console_sink->set_level(spdlog::level::debug);
+    console_sink->set_pattern("%d/%m/%Y %H:%M:%S.%e.%F [%^%l%$] [thread %t] %v");
 
     logger_.reset(new spdlog::logger("multi_sink", { console_sink}));
+    logger_->set_level(spdlog::level::debug);
   }
 };
 

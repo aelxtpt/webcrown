@@ -4,7 +4,8 @@ namespace webcrown {
 namespace server {
 
 std::shared_ptr<SslSession>
-HttpServer::create_session(uint64_t session_id, std::shared_ptr<SslServer> const& server)
+HttpServer::create_session(
+    uint64_t session_id, std::shared_ptr<SslServer> const& server, std::shared_ptr<spdlog::logger> const& logger)
 {
 
 }

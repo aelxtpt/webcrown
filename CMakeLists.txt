@@ -18,8 +18,12 @@ file(GLOB_RECURSE
   ${CMAKE_SOURCE_DIR}/src/*.cpp
 )
 
+# submodules
 add_subdirectory(submodules/spdlog)
+add_subdirectory(submodules/googletest)
+add_subdirectory(tests)
 
+# External Libs
 find_package(OpenSSL REQUIRED)
 
 set(THREADS_PREFER_PTHREAD_FLAG ON)

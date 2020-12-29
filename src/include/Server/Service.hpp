@@ -69,7 +69,12 @@ public:
   void post(CompletionHandler&& handler)
   { services_[0]->post(handler); }
 
+  template<typename CompletionHandler>
+  void dispatch(CompletionHandler&& handler)
+  { services_[0]->dispatch(handler); }
+
 private:
+
   void worker_thread(std::shared_ptr<asio::io_service> const& io_service);
 };
 }}
