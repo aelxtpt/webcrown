@@ -8,15 +8,15 @@ namespace server {
 Session::Session(
     uint64_t session_id,
     std::shared_ptr<Server> const& server,
-    std::shared_ptr<spdlog::logger> const& logger)
+    std::shared_ptr<spdlog::logger> const& logger,
+    std::shared_ptr<asio::ssl::context> const& context)
   : bytes_pending_(0)
   , bytes_sending_(0)
   , bytes_received_(0)
   , bytes_sent_(0)
   , server_(server)
   , io_service_(server_->service()->asio_service())
-  , context_(asio::ssl::context::sslv23)
-  , stream_socket_(*io_service_, context_)
+  , stream_socket_(*io_service_, *context)
   , connected_(false)
   , handshaked_(false)
   , receiving_(false)
@@ -32,13 +32,15 @@ void Session::connect()
   bytes_received_ = 0;
   bytes_sent_ = 0;
 
+  receive_buffer_.resize(option_receive_buffer_size());
+
   // Update the connected flag
   connected_ = true;
 
   // Call event
   on_connected();
 
-  auto async_handshake_handler = [this](std::error_code ec)
+  auto async_handshake_handler = [this](asio::error_code ec)
   {
     if (is_handshaked())
     {
@@ -172,7 +174,7 @@ void Session::try_receive()
 
   receiving_ = true;
 
-  auto async_receive_handler = [this](std::error_code ec, std::size_t bytes_size)
+  auto async_receive_handler = [this](asio::error_code const& ec, std::size_t bytes_size)
   {
     receiving_ = false;
 
@@ -206,8 +208,15 @@ void Session::try_receive()
   };
 
   stream_socket_.async_read_some(
-        asio::buffer(receive_buffer_.data(), receive_buffer_.size()),
-        async_receive_handler);
+    asio::buffer(receive_buffer_.data(), receive_buffer_.size()),
+    async_receive_handler);
+}
+
+std::size_t Session::option_receive_buffer_size() const
+{
+  asio::socket_base::receive_buffer_size option;
+  stream_socket_.next_layer().get_option(option);
+  return option.value();
 }
 
 }}

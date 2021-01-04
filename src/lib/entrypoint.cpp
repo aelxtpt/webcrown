@@ -24,9 +24,20 @@ using std::shared_ptr;
 
 int main() {
   try {
-    const unsigned short port_num = 8001;
+    const unsigned short port_num = 8443;
 
-    webcrown::WebCrown crown("127.0.0.1", port_num);
+    auto context = std::make_shared<asio::ssl::context>(asio::ssl::context::tlsv12);
+    context->set_password_callback(
+      [](size_t max_length, asio::ssl::context::password_purpose purpose) -> std::string
+      {
+        //return "Mag@d4sCAROhPapai";
+        return "123456";
+      });
+    context->use_certificate_chain_file("cert.pem");
+    context->use_private_key_file("key.pem", asio::ssl::context::pem);
+    context->use_tmp_dh_file("/home/aex/Projects/certificates/dh4096.pem");
+
+    webcrown::WebCrown crown("127.0.0.1", port_num, context);
     crown.start();
 
     for(;;)

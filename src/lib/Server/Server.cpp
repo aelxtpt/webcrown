@@ -9,7 +9,8 @@ Server::Server(
   std::shared_ptr<spdlog::logger> logger,
   std::shared_ptr<Service> const& service,
   uint16_t port_num,
-  std::string_view address)
+  std::string_view address,
+  std::shared_ptr<asio::ssl::context> const& context)
   : started_(false)
   , socket_acceptor_(*service->asio_service())
   , io_service_(service->asio_service())
@@ -20,6 +21,7 @@ Server::Server(
   , bytes_received_(0)
   , address_(address)
   , port_number_(port_num)
+  , context_(context)
   , last_generated_session_id_(0)
 {
 }
@@ -165,9 +167,11 @@ void Server::accept()
 }
 
 std::shared_ptr<Session> Server::create_session(
-    uint64_t session_id, std::shared_ptr<Server> const& server, std::shared_ptr<spdlog::logger> const& logger)
+    uint64_t session_id,
+    std::shared_ptr<Server> const& server,
+    std::shared_ptr<spdlog::logger> const& logger)
 {
-  return std::make_shared<Session>(session_id, server, logger);
+  return std::make_shared<Session>(session_id, server, logger, context_);
 }
 
 void Server::register_session()

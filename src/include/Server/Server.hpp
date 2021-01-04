@@ -33,6 +33,11 @@ class Server : public std::enable_shared_from_this<Server>
   std::string address_;
   uint16_t port_number_;
 
+  /// This is an object representing SSL context. Basically
+  /// this is a wrapper around the SSL_CTX data structure defined
+  /// by OpenSSL library
+  std::shared_ptr<asio::ssl::context> context_;
+
   // Threading sessions
   std::shared_mutex sessions_lock_;
   std::map<uint64_t, std::shared_ptr<Session>> sessions_;
@@ -48,7 +53,8 @@ public:
     std::shared_ptr<spdlog::logger> logger,
     std::shared_ptr<Service> const& service,
     uint16_t port_num,
-    std::string_view address);
+    std::string_view address,
+    std::shared_ptr<asio::ssl::context> const& context);
 
   Server(Server const&) = delete;
   Server(Server&&) = delete;
@@ -83,7 +89,9 @@ private:
   /// \param session_id - unique identifier for the session
   /// \param server - the connected server
   virtual std::shared_ptr<Session> create_session(
-      uint64_t session_id, std::shared_ptr<Server> const& server, std::shared_ptr<spdlog::logger> const& logger);
+      uint64_t session_id,
+      std::shared_ptr<Server> const& server,
+      std::shared_ptr<spdlog::logger> const& logger);
 
   /// Register a new session
   ///

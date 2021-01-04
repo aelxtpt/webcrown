@@ -27,11 +27,6 @@ class Session
   /// Asio IO service
   std::shared_ptr<asio::io_service> io_service_;
 
-  /// This is an object representing SSL context. Basically
-  /// this is a wrapper around the SSL_CTX data structure defined
-  /// by OpenSSL library
-  asio::ssl::context context_;
-
   /// Session Socket
   asio::ssl::stream<asio::ip::tcp::socket> stream_socket_;
 
@@ -63,7 +58,8 @@ public:
   explicit Session(
       uint64_t session_id,
       std::shared_ptr<Server> const& server,
-      std::shared_ptr<spdlog::logger> const& logger);
+      std::shared_ptr<spdlog::logger> const& logger,
+      std::shared_ptr<asio::ssl::context> const& context);
 
   Session(Session const&) = delete;
   Session(Session &&) = delete;
@@ -93,6 +89,9 @@ public:
 
   /// Get the session unique identifier
   uint64_t session_id() const noexcept { return session_id_; }
+
+  /// Return the size of the receive buffer
+  std::size_t option_receive_buffer_size() const;
 
   asio::ssl::stream<asio::ip::tcp::socket>::next_layer_type& socket() noexcept
   { return stream_socket_.next_layer(); }

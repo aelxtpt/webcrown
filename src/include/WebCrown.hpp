@@ -17,8 +17,9 @@ class WebCrown
 public:
 
   explicit WebCrown(
-      std::string_view address,
-      uint16_t port_number)
+    std::string_view address,
+    uint16_t port_number,
+    std::shared_ptr<asio::ssl::context> const& context)
   {
     initialize_logger();
 
@@ -27,7 +28,8 @@ public:
           logger_,
           service_,
           port_number,
-          std::move(address));
+          std::move(address),
+          context);
   }
 
   WebCrown(WebCrown const&) = delete;
