@@ -1,5 +1,7 @@
 #pragma once
 #include "Server/Server.hpp"
+#include "Server/Http/IController.hpp"
+
 
 namespace webcrown {
 namespace server {
@@ -13,13 +15,17 @@ class HttpServer : public Server
   /// this is a wrapper around the SSL_CTX data structure defined
   /// by OpenSSL library
   std::shared_ptr<asio::ssl::context> context_;
+
+  // TODO: for each session, we pass by copy all controllers ?? Oh my god
+  std::vector<std::shared_ptr<IController>> controllers_;
 public:
   explicit HttpServer(
-    std::shared_ptr<spdlog::logger> logger,
-    std::shared_ptr<Service> const& service,
-    uint16_t port_num,
-    std::string_view address,
-    std::shared_ptr<asio::ssl::context> const& context);
+      std::shared_ptr<spdlog::logger> logger,
+      std::shared_ptr<Service> const& service,
+      uint16_t port_num,
+      std::string_view address,
+      std::shared_ptr<asio::ssl::context> const& context,
+      std::vector<std::shared_ptr<IController>> const& controllers);
 
   HttpServer(HttpServer const&) = delete;
   HttpServer(HttpServer&&) = delete;

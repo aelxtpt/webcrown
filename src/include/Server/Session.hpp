@@ -96,12 +96,13 @@ public:
   asio::ssl::stream<asio::ip::tcp::socket>::next_layer_type& socket() noexcept
   { return stream_socket_.next_layer(); }
 
-private:
+
   /// Disconnect the session
   ///
   /// \param error - error code reason
   /// \return 'true' if the session was successfully disconnected, 'false' if the session is already disconnected
-  bool disconnect(std::error_code error);
+  bool disconnect(std::error_code error = {});
+private:
 
   /// Disconnect the session async
   ///

@@ -1,6 +1,7 @@
 #pragma once
 #include "Server/Service.hpp"
 #include "Server/Http/HttpServer.hpp"
+#include "Server/Http/IController.hpp"
 
 #include <spdlog/spdlog.h>
 #include <spdlog/sinks/stdout_color_sinks.h>
@@ -14,22 +15,29 @@ class WebCrown
   std::shared_ptr<server::http::HttpServer> server_;
 
   std::shared_ptr<spdlog::logger> logger_;
+
+  // TODO: So much overhead, we will need copy various requests ??
+  std::vector<std::shared_ptr<server::http::IController>> controllers_;
+
 public:
 
   explicit WebCrown(
-    std::string_view address,
-    uint16_t port_number,
-    std::shared_ptr<asio::ssl::context> const& context)
+      std::string_view address,
+      uint16_t port_number,
+      std::shared_ptr<asio::ssl::context> const& context,
+      std::vector<std::shared_ptr<server::http::IController>> const& controllers)
   {
     initialize_logger();
 
+    controllers_ = controllers; // Copy :(
     service_ = std::make_shared<server::Service>(logger_);
     server_ = std::make_shared<server::http::HttpServer>(
           logger_,
           service_,
           port_number,
           std::move(address),
-          context);
+          context,
+          controllers);
   }
 
   WebCrown(WebCrown const&) = delete;
