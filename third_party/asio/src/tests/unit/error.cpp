@@ -87,3 +87,31 @@ ASIO_TEST_SUITE
   "error",
   ASIO_TEST_CASE(error_test)
 )
+
+const char* webcrown::webcrown_error::name() const noexcept {
+    return nullptr;
+}
+
+std::error_condition webcrown::webcrown_error::default_error_condition(int __ev) const noexcept {
+    return error_category::default_error_condition(__ev);
+}
+
+bool webcrown::webcrown_error::equivalent(int __code, const std::error_condition& __condition) const noexcept {
+    return error_category::equivalent(__code, __condition);
+}
+
+bool webcrown::webcrown_error::equivalent(const std::error_code& __code, int __condition) const noexcept {
+    return error_category::equivalent(__code, __condition);
+}
+
+std::string webcrown::webcrown_error::message(int __ev) const {
+    return std::string();
+}
+
+const char* webcrown::server::http::webcrown_http_error_category::name() const noexcept {
+    return nullptr;
+}
+
+std::string webcrown::server::http::webcrown_http_error_category::message(int __ev) const {
+    return std::string();
+}

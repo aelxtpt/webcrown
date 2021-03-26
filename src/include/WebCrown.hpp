@@ -58,14 +58,16 @@ public:
 
     while (!service_->is_started())
     {
-      pthread_yield();
+      //pthread_yield();
+      sched_yield();
     }
 
     server_->start();
 
     while (!server_->is_started())
     {
-      pthread_yield();
+        //pthread_yield();
+        sched_yield();
     }
   }
 

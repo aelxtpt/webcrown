@@ -1,6 +1,7 @@
 #pragma once
 
 #include <algorithm>
+#include <string>
 
 namespace webcrown {
 namespace server {
