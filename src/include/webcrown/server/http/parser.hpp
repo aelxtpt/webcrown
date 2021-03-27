@@ -81,6 +81,8 @@ public:
     /// \param ec error result
     void parse_protocol(char const*& it, char const* last, int& protocol_version, std::error_code& ec);
 
+    /// Returns the http parse phase
+    /// \return parse_phase enum
     parse_phase parse_phase() const noexcept { return parse_phase_; }
 };
 
@@ -228,6 +230,12 @@ parser::parse_target(const char*& it, const char* last, std::string_view& target
     parse_phase_ = parse_phase::parse_target;
     auto const first = it;
 
+    if (!detail::is_pathchar(*it))
+    {
+        ec = make_error(http_error::bad_target);
+        return;
+    }
+
     //Request line
     //method_token request- protocol_version CLRF
     // Procura pela uri
@@ -239,7 +247,7 @@ parser::parse_target(const char*& it, const char* last, std::string_view& target
     }
 
     // Muito curto a string ?
-    if (it + 1 > last)
+    if (it + 1 >= last)
     {
         // Error: request line está incompleto
         ec = make_error(http_error::incomplete_start_line);
@@ -261,7 +269,8 @@ parser::parse_target(const char*& it, const char* last, std::string_view& target
     }
 
     //++it is the SP (Single space)
-    target = make_string(first, ++it);
+    target = make_string(first, it++);
+    parse_phase_ = parse_phase::parse_target_finished;
 }
 
 inline
