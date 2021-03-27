@@ -12,7 +12,13 @@ enum class http_error : std::uint8_t
     unknown = 0,
 
     /// When the request line is incomplete
-    incomplete_request_line,
+    incomplete_start_line,
+
+    invalid_request_line,
+
+    incomplete_message_header,
+
+    invalid_message_header_crlf,
 
     ///
     bad_method,
@@ -34,8 +40,20 @@ public:
     {
         switch(static_cast<http_error>(ec))
         {
-            case http_error::incomplete_request_line:
-                return "request line is incomplete";
+            case http_error::incomplete_start_line:
+                return "http incomplete start line";
+            case http_error::invalid_request_line:
+                return "http invalid request line";
+            case http_error::incomplete_message_header:
+                return "http incomplete message header";
+            case http_error::invalid_message_header_crlf:
+                return "http invalid message header crlf";
+            case http_error::bad_method:
+                return "http bad method";
+            case http_error::bad_target:
+                return "http bad target";
+            case http_error::bad_version:
+                return "http bad version";
             default:
                 return "unknown webcrown http error";
         }

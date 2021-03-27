@@ -69,6 +69,16 @@ is_digit(char c)
     return static_cast<unsigned char>(c-'0') < 10;
 }
 
+//! Count of elements in static array
+template <typename T, std::size_t N>
+constexpr std::size_t
+countof(const T (&)[N]) noexcept { return N; }
+
+//! Count of elements in any other STL container
+//template <typename T>
+//std::size_t
+//countof(const T& container) noexcept { return container.size(); }
+
 }}}}
 
 #endif //WEBCROWN_PARSER_HPP
