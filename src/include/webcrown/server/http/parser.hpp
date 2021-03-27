@@ -277,6 +277,8 @@ inline
 void
 parser::parse_protocol(const char*& it, const char* last, int& protocol_version, std::error_code& ec)
 {
+    parse_phase_ = parse_phase::parse_protocol_version;
+
     // HTTP/1.1 <--- 8 characters
     if (it + 8 > last)
     {
@@ -331,6 +333,7 @@ parser::parse_protocol(const char*& it, const char* last, int& protocol_version,
     }
 
     protocol_version += *it++ - '0';
+    parse_phase_ = parse_phase::parse_protocol_version_finished;
 }
 
 }}}

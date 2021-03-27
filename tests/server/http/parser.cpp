@@ -214,3 +214,81 @@ TEST(HTTP_PARSER, parse_target_with_two_spaces_after_should_return_expected_targ
     ASSERT_EQ(expected_target, std::string(target));
     ASSERT_EQ(expected_parse_phase, p.parse_phase());
 }
+
+TEST(HTTP_PARSER, parse_protocol_filled_with_space_should_return_error)
+{
+    using webcrown::server::http::parse_phase;
+    using webcrown::server::http::parser;
+
+    // Expected
+    const std::string expected_error_msg = "http bad version";
+    const parse_phase expected_parse_phase = parse_phase::parse_protocol_version;
+
+    // Scenario
+    char const* raw = " HTTP/1.1";
+
+    parser p{};
+    std::error_code ec{};
+    int protocol;
+
+    char const*& it = raw;
+    char const* last = raw + std::strlen(raw);
+
+    p.parse_protocol(it, last, protocol, ec);
+
+    // Assert
+    ASSERT_EQ(expected_error_msg, ec.message());
+    ASSERT_EQ(expected_parse_phase, p.parse_phase());
+}
+
+TEST(HTTP_PARSER, parse_protocol_incosistent_version_should_return_error)
+{
+    using webcrown::server::http::parse_phase;
+    using webcrown::server::http::parser;
+
+    // Expected
+    const std::string expected_error_msg = "http bad version";
+    const parse_phase expected_parse_phase = parse_phase::parse_protocol_version;
+
+    // Scenario
+    char const* raw = "XTTP/1.1";
+
+    parser p{};
+    std::error_code ec{};
+    int protocol{};
+
+    char const*& it = raw;
+    char const* last = raw + std::strlen(raw);
+
+    p.parse_protocol(it, last, protocol, ec);
+
+    // Assert
+    ASSERT_EQ(expected_error_msg, ec.message());
+    ASSERT_EQ(expected_parse_phase, p.parse_phase());
+}
+
+TEST(HTTP_PARSER, parse_protocol_all_ok_should_return_expected_version)
+{
+    using webcrown::server::http::parse_phase;
+    using webcrown::server::http::parser;
+
+    // Expected
+    const int expected_version = 11;
+    const parse_phase expected_parse_phase = parse_phase::parse_protocol_version_finished;
+
+    // Scenario
+    char const* raw = "HTTP/1.1";
+
+    parser p{};
+    std::error_code ec{};
+    int protocol{};
+
+    char const*& it = raw;
+    char const* last = raw + std::strlen(raw);
+
+    p.parse_protocol(it, last, protocol, ec);
+
+    // Assert
+    ASSERT_EQ(expected_version, protocol);
+    ASSERT_EQ(expected_parse_phase, p.parse_phase());
+}
