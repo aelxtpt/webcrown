@@ -20,6 +20,7 @@ TEST(HTTP_PARSER, parse_method_with_invalid_characters_should_return_error)
 {
     // Expected
     const std::string expected_error_msg = "http bad method";
+    const webcrown::server::http::parse_phase expected_parse_phase = webcrown::server::http::parse_phase::parse_method;
 
     // Scenario
     char const* raw = "$@SER /";
@@ -36,12 +37,14 @@ TEST(HTTP_PARSER, parse_method_with_invalid_characters_should_return_error)
 
     // Assert
     ASSERT_EQ(expected_error_msg, ec.message());
+    ASSERT_EQ(expected_parse_phase, p.parse_phase());
 }
 
 TEST(HTTP_PARSER, parse_method_with_incomplete_requestline_should_return_error)
 {
     // Expected
     const std::string expected_error_msg = "http incomplete start line";
+    const webcrown::server::http::parse_phase expected_parse_phase = webcrown::server::http::parse_phase::parse_method;
 
     // Scenario
     char const* raw = "GET";
@@ -58,12 +61,14 @@ TEST(HTTP_PARSER, parse_method_with_incomplete_requestline_should_return_error)
 
     // Assert
     ASSERT_EQ(expected_error_msg, ec.message());
+    ASSERT_EQ(expected_parse_phase, p.parse_phase());
 }
 
 TEST(HTTP_PARSER, parse_method_with_method_without_space_should_return_error)
 {
     // Expected
     const std::string expected_error_msg = "http bad method";
+    const webcrown::server::http::parse_phase expected_parse_phase = webcrown::server::http::parse_phase::parse_method;
 
     // Scenario
     char const* raw = "GET/ ";
@@ -80,12 +85,14 @@ TEST(HTTP_PARSER, parse_method_with_method_without_space_should_return_error)
 
     // Assert
     ASSERT_EQ(expected_error_msg, ec.message());
+    ASSERT_EQ(expected_parse_phase, p.parse_phase());
 }
 
 TEST(HTTP_PARSER, parse_method_filled_with_space_string_should_return_error)
 {
     // Expected
     const std::string expected_error_msg = "http bad method";
+    const webcrown::server::http::parse_phase expected_parse_phase = webcrown::server::http::parse_phase::parse_method;
 
     // Scenario
     char const* raw = "  ";
@@ -102,6 +109,7 @@ TEST(HTTP_PARSER, parse_method_filled_with_space_string_should_return_error)
 
     // Assert
     ASSERT_EQ(expected_error_msg, ec.message());
+    ASSERT_EQ(expected_parse_phase, p.parse_phase());
 }
 
 TEST(HTTP_PARSER, parse_method_with_two_spaces_after_should_return_expected_method)
@@ -110,6 +118,7 @@ TEST(HTTP_PARSER, parse_method_with_two_spaces_after_should_return_expected_meth
 
     // Expected
     const std::string expected_method = "GET";
+    const webcrown::server::http::parse_phase expected_parse_phase = webcrown::server::http::parse_phase::parse_method_finished;
 
     // Scenario
     char const* raw = "GET  ";
@@ -126,4 +135,5 @@ TEST(HTTP_PARSER, parse_method_with_two_spaces_after_should_return_expected_meth
 
     // Assert
     ASSERT_EQ(expected_method, std::string(method));
+    ASSERT_EQ(expected_parse_phase, p.parse_phase());
 }

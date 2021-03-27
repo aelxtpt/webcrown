@@ -80,6 +80,8 @@ public:
     /// \param protocol_version string_view result
     /// \param ec error result
     void parse_protocol(char const*& it, char const* last, int& protocol_version, std::error_code& ec);
+
+    parse_phase parse_phase() const noexcept { return parse_phase_; }
 };
 
 inline
@@ -215,6 +217,8 @@ parser::parse_method(char const*& it, char const* last, std::string_view& method
 
     //++it is the SP (Single space)
     method = make_string(first, it++);
+
+    parse_phase_ = parse_phase::parse_method_finished;
 }
 
 inline
