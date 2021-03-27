@@ -62,6 +62,13 @@ is_pathchar(char c)
     return tab[static_cast<unsigned char>(c)];
 }
 
+static
+bool
+is_digit(char c)
+{
+    return static_cast<unsigned char>(c-'0') < 10;
+}
+
 }}}}
 
 #endif //WEBCROWN_PARSER_HPP

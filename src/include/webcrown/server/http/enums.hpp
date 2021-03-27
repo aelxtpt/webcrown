@@ -21,7 +21,7 @@ enum class parse_phase : std::uint8_t
     not_started,
     started,
     parse_method,
-    parse_uri,
+    parse_target,
     parse_protocol_version,
     finished
 };

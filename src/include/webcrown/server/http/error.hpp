@@ -17,7 +17,9 @@ enum class http_error : std::uint8_t
     ///
     bad_method,
 
-    bad_target
+    bad_target,
+
+    bad_version
 };
 
 class http_error_category : public std::error_category

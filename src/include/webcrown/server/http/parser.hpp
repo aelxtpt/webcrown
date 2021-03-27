@@ -41,19 +41,26 @@ public:
     // parse request line
     void parse_request_line();
 
-    /// Capture the HTTP method in the buffer
+    /// Extract the HTTP method in the buffer
     /// \param it pointer to the first position on the buffer
     /// \param last end of the buffer
     /// \param method string_view result
     /// \param ec error result
     void parse_method(char const*& it, char const* last, std::string_view& method, std::error_code& ec); // Case sensitive
 
-    void parse_target(char const*& it, char const* last, std::string_view& uri, std::error_code& ec);
+    /// Extract the HTTP target, aka URI in the buffer
+    /// \param it pointer to the current position on the buffer
+    /// \param last end of the buffer
+    /// \param target string_view result
+    /// \param ec error result
+    void parse_target(char const*& it, char const* last, std::string_view& target, std::error_code& ec);
 
-    void parse_protocol();
+    void parse_protocol(char const*& it, char const* last, int& protocol_version, std::error_code& ec);
 };
 
-inline void parser::parse(const char *buffer, size_t size, std::error_code& ec)
+inline
+void
+parser::parse(const char *buffer, size_t size, std::error_code& ec)
 {
     parse_phase_ = parse_phase::started;
 
@@ -75,10 +82,16 @@ inline void parser::parse(const char *buffer, size_t size, std::error_code& ec)
     if (ec)
         return;
 
-    std::string_view uri;
-    parse_target(it, last, uri, ec);
-}
+    std::string_view target;
+    parse_target(it, last, target, ec);
+    if (ec)
+        return;
 
+    int protocol_version{};
+    parse_protocol(it, last, protocol_version, ec);
+    if (ec)
+        return;
+}
 
 static std::string_view make_string(char const* first, char const* last)
 {
@@ -100,7 +113,7 @@ parser::parse_method(char const*& it, char const* last, std::string_view& method
             break;
     }
 
-    // Muito curto a string ?
+    // Muito curta a string ?
     if (it + 1 > last)
     {
         // Error: request line está incompleto
@@ -122,15 +135,16 @@ parser::parse_method(char const*& it, char const* last, std::string_view& method
         return;
     }
 
-    //++it is tye SP (Single space)
+    //++it is the SP (Single space)
     method = make_string(first, ++it);
 }
 
 inline
 void
-parser::parse_target(const char*& it, const char* last, std::string_view uri, std::error_code& ec)
+parser::parse_target(const char*& it, const char* last, std::string_view& target, std::error_code& ec)
 {
-    parse_phase_ = parse_phase::parse_uri;
+    parse_phase_ = parse_phase::parse_target;
+    auto const first = it;
 
     //Request line
     //method_token request- protocol_version CLRF
@@ -164,8 +178,68 @@ parser::parse_target(const char*& it, const char* last, std::string_view uri, st
         return;
     }
 
-    //++it is tye SP (Single space)
-    method = make_string(first, ++it);
+    //++it is the SP (Single space)
+    target = make_string(first, ++it);
+}
+
+inline
+void
+parser::parse_protocol(const char*& it, const char* last, int& protocol_version, std::error_code& ec)
+{
+    // HTTP/1.1 <--- 8 characters
+    if (it + 8 > last)
+    {
+        ec = make_error(http_error::incomplete_request_line);
+        return;
+    }
+
+    if (*it++ != 'H')
+    {
+        ec = make_error(http_error::bad_version);
+        return;
+    }
+    if (*it++ != 'T')
+    {
+        ec = make_error(http_error::bad_version);
+        return;
+    }
+    if (*it++ != 'T')
+    {
+        ec = make_error(http_error::bad_version);
+        return;
+    }
+    if (*it++ != 'P')
+    {
+        ec = make_error(http_error::bad_version);
+        return;
+    }
+    if (*it++ != '/')
+    {
+        ec = make_error(http_error::bad_version);
+        return;
+    }
+
+    if (!detail::is_digit(*it))
+    {
+        ec = make_error(http_error::bad_version);
+        return;
+    }
+
+    protocol_version = 10 * (*it++ - '0');
+
+    if (*it++ != '.')
+    {
+        ec = make_error(http_error::bad_version);
+        return;
+    }
+
+    if (!detail::is_digit(*it))
+    {
+        ec = make_error(http_error::bad_version);
+        return;
+    }
+
+    protocol_version += *it++ - '0';
 }
 
 }}}
