@@ -322,3 +322,28 @@ TEST(HTTP_PARSER, parse_message_header)
     ASSERT_EQ(headers["Accept-Encoding"], "gzip, deflate, br");
     ASSERT_EQ(headers["Connection"], "keep-alive");
 }
+
+TEST(HTTP_PARSER, parse_body)
+{
+    using webcrown::server::http::parse_phase;
+    using webcrown::server::http::parser;
+
+    // Expected
+
+    // Scenario
+    char const* raw = "{\n    \"user\": \"alex\"\n}";
+
+    parser p{};
+    std::error_code ec{};
+
+    char const*& it = raw;
+    char const* last = raw + std::strlen(raw);
+
+    std::string_view body;
+
+    p.parse_body(it, last, body, ec);
+
+    auto result = std::string(body);
+    // Assert
+    ASSERT_EQ(result, raw);
+}

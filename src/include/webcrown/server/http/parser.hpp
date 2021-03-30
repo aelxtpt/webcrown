@@ -65,6 +65,8 @@ public:
 
     void parse_message_header_value(const char*& it, char const* last, std::string_view& header_value, std::error_code& ec);
 
+    void parse_body(const char*& it, char const* last, std::string_view& body, std::error_code& ec);
+
     /// Extract the HTTP method in the buffer
     /// \param it pointer to the first position on the buffer
     /// \param last end of the buffer
@@ -148,6 +150,17 @@ parser::parse_start_line(const char *buffer, size_t size, std::error_code& ec)
     it += 2;
 
     //parse_message_header(it, last, ec);
+}
+
+inline
+void
+parser::parse_body(const char*& it, const char* last, std::string_view& body, std::error_code& ec)
+{
+    auto first = it;
+
+    // check limit of length
+
+    body = make_string(first, last);
 }
 
 inline
