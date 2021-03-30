@@ -6,6 +6,10 @@ namespace server {
 namespace http {
 namespace detail {
 
+// https://tools.ietf.org/html/rfc822#section-3
+// https://tools.ietf.org/html/rfc7231
+// https://tools.ietf.org/html/rfc5234#appendix-B.1
+
 // TODO: Entender, na aula de standardford lá tem isso
 char is_token_char(char c)
 {
@@ -67,6 +71,45 @@ bool
 is_digit(char c)
 {
     return static_cast<unsigned char>(c-'0') < 10;
+}
+
+// field-name  =  1*<any CHAR, excluding CTLs, SPACE, and ":">
+static
+bool is_valid_token(char t)
+{
+    auto result = int(t);
+
+    // Controls (CTLs) = %x00-1F / %x7F
+    if((result >= 0x00 && result <= 0x1f) || result == 0x7f)
+        return false;
+
+    // Space
+    if(result == 0x20)
+        return false;
+    // :
+    if (result == 0x3A)
+        return false;
+
+    if (result >= 0x01 && result <= 0x7f)
+        return true;
+
+    return false;
+};
+
+// <any CHAR, including bare    ; => atoms, specials, comments and quoted-strings are NOT recognized.
+//  CR & bare LF, but NOT       ;
+//  including CRLF>
+// Validation of CRLF out of function
+static
+bool is_valid_text(char t)
+{
+    auto result = int(t);
+
+    // CHAR
+    if (result >= 0x01 && result <= 0x7f)
+        return true;
+
+    return false;
 }
 
 //! Count of elements in static array

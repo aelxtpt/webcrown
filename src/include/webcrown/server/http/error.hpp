@@ -25,7 +25,11 @@ enum class http_error : std::uint8_t
 
     bad_target,
 
-    bad_version
+    bad_version,
+
+    bad_field,
+
+    bad_field_value,
 };
 
 class http_error_category : public std::error_category
@@ -54,6 +58,10 @@ public:
                 return "http bad target";
             case http_error::bad_version:
                 return "http bad version";
+            case http_error::bad_field:
+                return "http bad field";
+            case http_error::bad_field_value:
+                return "http bad field value";
             default:
                 return "unknown webcrown http error";
         }

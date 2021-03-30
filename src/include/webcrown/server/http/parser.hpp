@@ -3,6 +3,7 @@
 
 #include <cstdint>
 #include <system_error>
+#include <unordered_map>
 
 #include "webcrown/server/http/method.hpp"
 #include "webcrown/server/http/enums.hpp"
@@ -58,7 +59,11 @@ public:
     /// \param ec
     void parse_start_line(const char* buffer, size_t size, std::error_code& ec);
 
-    void parse_message_header(char const*& it, char const* last, std::error_code& ec);
+    void parse_message_header(char const*& it, char const* last, std::unordered_map<std::string, std::string>& headers, std::error_code& ec);
+
+    void parse_message_header_name(char const*& it, char const* last, std::string_view& header_name, std::error_code& ec);
+
+    void parse_message_header_value(const char*& it, char const* last, std::string_view& header_value, std::error_code& ec);
 
     /// Extract the HTTP method in the buffer
     /// \param it pointer to the first position on the buffer
@@ -142,30 +147,121 @@ parser::parse_start_line(const char *buffer, size_t size, std::error_code& ec)
     // Skip the CRLR
     it += 2;
 
-    parse_message_header(it, last, ec);
+    //parse_message_header(it, last, ec);
 }
 
 inline
 void
-parser::parse_message_header(const char*& it, const char* last, std::error_code& ec)
+parser::parse_message_header(const char*& it, const char* last, std::unordered_map<std::string, std::string>& headers, std::error_code& ec)
 {
-    for(;;)
+    // Muito curta ?
+    if(it + 2 > last)
     {
-        // Muito curta ?
-        if(it + 2 > last)
-        {
-            ec = make_error(http_error::incomplete_message_header);
-            return;
-        }
+        ec = make_error(http_error::incomplete_message_header);
+        return;
+    }
 
-        // Final do header_name: header_value ?
+    auto first = it;
+
+    // Structure
+    // message-header = field-name ":" [ field-value ]
+    //       field-name     = token
+    //       field-value    = *( field-content | LWS )
+    //       field-content  = <the OCTETs making up the field-value
+    //                        and consisting of either *TEXT or combinations
+    //                        of token, separators, and quoted-string>
+
+    // Parse fields
+    for(;it < last; ++it)
+    {
+        std::string_view header_name{};
+        std::string_view header_value{};
+
+        parse_message_header_name(it, last, header_name, ec);
+
+        parse_message_header_value(it, last, header_value, ec);
+
+        // TODO: Optimize me, please
+        std::string hn = std::string(header_name);
+        std::string hv = std::string(header_value);
+        headers.insert({hn, hv});
+
+        // Final do header_name: header_value
         if(it[0] == '\r')
         {
             if(it[1] != '\n')
                 ec = make_error(http_error::invalid_message_header_crlf);
 
+            // end headers
+            if (it[2] == '\r' && it[3] == '\n')
+                break;
+
+            // This will Skip crlf for complete, because the main for is already skip the \r
+            ++it;
         }
     }
+}
+
+inline
+void
+parser::parse_message_header_name(const char*& it, const char* last, std::string_view& header_name,
+                                  std::error_code& ec)
+{
+    auto first = it;
+
+    for(;it < last; ++it)
+    {
+        if (*it == ':')
+            break;
+
+        if (!detail::is_valid_token(*it))
+        {
+            ec = make_error(http_error::bad_field);
+            return;
+        }
+    }
+
+    header_name = make_string(first, it++);
+
+    //++it; // skip the : character
+}
+
+inline
+void
+parser::parse_message_header_value(const char*& it, const char* last, std::string_view& header_value,
+                                   std::error_code& ec)
+{
+    // skip leading ' ' and '\t'
+    for(;;++it)
+    {
+        if (it + 1 > last)
+        {
+            ec = make_error(http_error::incomplete_message_header);
+            return;
+        }
+        // Deve começar com espaco ou tab
+        if (! (*it == ' ' || *it == '\t'))
+            break;
+    }
+
+    auto first = it;
+
+    // Field value
+    for(; it < last; ++it)
+    {
+        if(it[0] == '\r' && it[1] == '\n')
+            break;
+
+        // TODO: Can be undefined behavior
+        // TODO: Refactor this part
+        if (!std::isprint(*it))
+        {
+            ec = make_error(http_error::bad_field_value);
+            return;
+        }
+    }
+
+    header_value = make_string(first, it);
 }
 
 inline

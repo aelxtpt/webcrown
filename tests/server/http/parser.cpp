@@ -292,3 +292,33 @@ TEST(HTTP_PARSER, parse_protocol_all_ok_should_return_expected_version)
     ASSERT_EQ(expected_version, protocol);
     ASSERT_EQ(expected_parse_phase, p.parse_phase());
 }
+
+TEST(HTTP_PARSER, parse_message_header)
+{
+    using webcrown::server::http::parse_phase;
+    using webcrown::server::http::parser;
+
+    // Expected
+
+    // Scenario
+    char const* raw = "User-Agent: PostmanRuntime/7.26.10\r\nAccept: */*\r\nPostman-Token: 957ca241-fd52-44eb-915a-5c40c5c21bfc\r\nHost: localhost:8443\r\nAccept-Encoding: gzip, deflate, br\r\nConnection: keep-alive\r\n\r\n";
+
+    parser p{};
+    std::error_code ec{};
+
+    char const*& it = raw;
+    char const* last = raw + std::strlen(raw);
+
+    std::unordered_map<std::string, std::string> headers{};
+
+    p.parse_message_header(it, last, headers, ec);
+
+    // Assert
+    ASSERT_TRUE(headers.size() > 0);
+    ASSERT_EQ(headers["User-Agent"], "PostmanRuntime/7.26.10");
+    ASSERT_EQ(headers["Accept"], "*/*");
+    ASSERT_EQ(headers["Postman-Token"], "957ca241-fd52-44eb-915a-5c40c5c21bfc");
+    ASSERT_EQ(headers["Host"], "localhost:8443");
+    ASSERT_EQ(headers["Accept-Encoding"], "gzip, deflate, br");
+    ASSERT_EQ(headers["Connection"], "keep-alive");
+}
