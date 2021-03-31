@@ -13,7 +13,7 @@ namespace server {
 /// asio::io_service is a central component in the Asio I/O infrastructure.
 /// It provides access to the network I/O services of the underlying operating
 /// system.
-class Service : public std::enable_shared_from_this<Service>
+class service : public std::enable_shared_from_this<service>
 {
   /// Asio IO services
   std::vector<std::shared_ptr<asio::io_service>> services_;
@@ -34,14 +34,14 @@ public:
   ///
   /// \param threads - Working threads count (default is 1)
   /// \param pool - Asio service thread pool flag (default is false)
-  explicit Service(std::shared_ptr<spdlog::logger> const& logger, uint threads = 1);
+  explicit service(std::shared_ptr<spdlog::logger> const& logger, uint threads = 1);
 
-  Service(Service const&) = delete;
-  Service(Service &&) = delete;
-  ~Service() = default;
+  service(service const&) = delete;
+  service(service &&) = delete;
+  ~service() = default;
 
-  Service& operator=(Service const&) = delete;
-  Service& operator=(Service&&) = delete;
+  service& operator=(service const&) = delete;
+  service& operator=(service&&) = delete;
 
   /// Start the service
   void start();

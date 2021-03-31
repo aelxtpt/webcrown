@@ -11,7 +11,7 @@ namespace http {
 
 class HttpRequest
 {
-  friend class HttpSession;
+  friend class http_session;
 
   // HTTP request error flag
   bool error_;

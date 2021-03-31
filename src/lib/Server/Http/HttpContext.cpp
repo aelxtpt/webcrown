@@ -1,5 +1,5 @@
 #include "Server/Http/HttpContext.hpp"
-#include "Server/Http/HttpSession.hpp"
+#include "Server/Http/http_session.hpp"
 #include "Server/Http/HttpRequest.hpp"
 #include "Server/Http/HttpEndpoint.hpp"
 
@@ -7,7 +7,7 @@ namespace webcrown {
 namespace server {
 namespace http {
 
-HttpContext::HttpContext(std::shared_ptr<HttpSession> session)
+HttpContext::HttpContext(std::shared_ptr<http_session> session)
   : session_(session)
 {
 

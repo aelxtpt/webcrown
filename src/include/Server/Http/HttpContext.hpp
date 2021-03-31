@@ -9,17 +9,17 @@ namespace webcrown {
 namespace server {
 namespace http {
 
-class HttpSession;
+class http_session;
 class HttpRequest;
 class HttpEndpoint;
 
 class HttpContext
 {
-  std::shared_ptr<HttpSession> session_;
+  std::shared_ptr<http_session> session_;
 
   std::vector<std::shared_ptr<HttpEndpoint>> endpoints_;
 public:
-  HttpContext(std::shared_ptr<HttpSession> session);
+  HttpContext(std::shared_ptr<http_session> session);
 
   void add_endpoint(std::shared_ptr<HttpEndpoint> const endpoint);
 

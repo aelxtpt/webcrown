@@ -1,13 +1,13 @@
-#include "Server/Session.hpp"
-#include "Server/Server.hpp"
+#include "webcrown/server/session.hpp"
+#include "webcrown/server/server.hpp"
 
 
 namespace webcrown {
 namespace server {
 
-Session::Session(
+session::session(
     uint64_t session_id,
-    std::shared_ptr<Server> const& server,
+    std::shared_ptr<webcrown::server::server> const& server,
     std::shared_ptr<spdlog::logger> const& logger,
     std::shared_ptr<asio::ssl::context> const& context)
   : bytes_pending_(0)
@@ -25,7 +25,7 @@ Session::Session(
 {
 }
 
-void Session::connect()
+void session::connect()
 {
   bytes_pending_ = 0;
   bytes_sending_ = 0;
@@ -73,7 +73,7 @@ void Session::connect()
   stream_socket_.async_handshake(asio::ssl::stream_base::server, async_handshake_handler);
 }
 
-bool Session::disconnect(std::error_code error)
+bool session::disconnect(std::error_code error)
 {
   if (!is_connected())
   {
@@ -116,7 +116,7 @@ bool Session::disconnect(std::error_code error)
   return true;
 }
 
-bool Session::disconnect_async(bool dispatch)
+bool session::disconnect_async(bool dispatch)
 {
   if (!is_connected())
   {
@@ -158,7 +158,7 @@ bool Session::disconnect_async(bool dispatch)
   return true;
 }
 
-void Session::try_receive()
+void session::try_receive()
 {
   if (receiving_)
   {
@@ -212,7 +212,7 @@ void Session::try_receive()
     async_receive_handler);
 }
 
-std::size_t Session::option_receive_buffer_size() const
+std::size_t session::option_receive_buffer_size() const
 {
   asio::socket_base::receive_buffer_size option;
   stream_socket_.next_layer().get_option(option);

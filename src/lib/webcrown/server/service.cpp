@@ -1,9 +1,9 @@
-#include "Server/Service.hpp"
+#include "webcrown/server/service.hpp"
 
 namespace webcrown {
 namespace server {
 
-Service::Service(const std::shared_ptr<spdlog::logger>& logger, uint threads)
+service::service(const std::shared_ptr<spdlog::logger>& logger, uint threads)
   : logger_(logger)
   , starded_(false)
   , round_robin_index_(0)
@@ -19,7 +19,7 @@ Service::Service(const std::shared_ptr<spdlog::logger>& logger, uint threads)
   }
 }
 
-void Service::start()
+void service::start()
 {
   assert(!is_started() && "Service is already started");
   if (is_started())
@@ -59,7 +59,7 @@ void Service::start()
   }
 }
 
-void Service::stop()
+void service::stop()
 {
   assert(is_started() && "Service is not started");
   if (!is_started())
@@ -94,7 +94,7 @@ void Service::stop()
   }
 }
 
-void Service::worker_thread(std::shared_ptr<asio::io_service> const& io_service)
+void service::worker_thread(std::shared_ptr<asio::io_service> const& io_service)
 {
   logger_->info("[Service][worker_thread] Worker thread was started");
 

@@ -1,6 +1,6 @@
 #pragma once
-#include "Server/Service.hpp"
-#include "Server/Http/HttpServer.hpp"
+#include "Server/service.hpp"
+#include "Server/Http/http_server.hpp"
 #include "Server/Http/IController.hpp"
 
 #include <spdlog/spdlog.h>
@@ -11,8 +11,8 @@ namespace webcrown {
 
 class WebCrown
 {
-  std::shared_ptr<server::Service> service_;
-  std::shared_ptr<server::http::HttpServer> server_;
+  std::shared_ptr<server::service> service_;
+  std::shared_ptr<server::http::http_server> server_;
 
   std::shared_ptr<spdlog::logger> logger_;
 
@@ -30,8 +30,8 @@ public:
     initialize_logger();
 
     controllers_ = controllers; // Copy :(
-    service_ = std::make_shared<server::Service>(logger_);
-    server_ = std::make_shared<server::http::HttpServer>(
+    service_ = std::make_shared<server::service>(logger_);
+    server_ = std::make_shared<server::http::http_server>(
           logger_,
           service_,
           port_number,
@@ -48,8 +48,8 @@ public:
 
   virtual ~WebCrown() = default;
 
-  std::shared_ptr<server::Service>& service() noexcept { return service_; }
-  std::shared_ptr<server::http::HttpServer>& server() noexcept { return server_; }
+  std::shared_ptr<server::service>& service() noexcept { return service_; }
+  std::shared_ptr<server::http::http_server>& server() noexcept { return server_; }
 
 
   virtual void start()

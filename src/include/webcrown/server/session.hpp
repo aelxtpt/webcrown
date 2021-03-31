@@ -1,19 +1,19 @@
 #pragma once
-#include "Server/Service.hpp"
+#include "webcrown/server/service.hpp"
 #include <asio/ssl/stream.hpp>
 
 namespace webcrown {
 namespace server {
 
-class Server;
+class server;
 
 /// This class mantains a socket with the SSL Client. Responsable to read and write
 /// data with the SSL Client.
-class Session
+class session
 {
   // The class SslServer is responsable
   // to connect and disconnect the session
-  friend class Server;
+  friend class server;
 
   // Session Statistic
   uint64_t bytes_pending_;
@@ -22,7 +22,7 @@ class Session
   uint64_t bytes_sent_;
 
   /// Server & session
-  std::shared_ptr<Server> server_;
+  std::shared_ptr<server> server_;
 
   /// Asio IO service
   std::shared_ptr<asio::io_service> io_service_;
@@ -55,22 +55,22 @@ public:
   ///
   /// \param session_id - unique identifier of the session
   /// \param server - Connected server
-  explicit Session(
+  explicit session(
       uint64_t session_id,
-      std::shared_ptr<Server> const& server,
+      std::shared_ptr<webcrown::server::server> const& server,
       std::shared_ptr<spdlog::logger> const& logger,
       std::shared_ptr<asio::ssl::context> const& context);
 
-  Session(Session const&) = delete;
-  Session(Session &&) = delete;
+  session(session const&) = delete;
+  session(session &&) = delete;
 
-  Session& operator=(Session const&) = delete;
-  Session& operator=(Session&&) = delete;
+  session& operator=(session const&) = delete;
+  session& operator=(session&&) = delete;
 
-  ~Session() = default;
+  ~session() = default;
 
   /// Get the connected server
-  std::shared_ptr<Server>& server() noexcept { return server_; }
+  std::shared_ptr<server>& server() noexcept { return server_; }
 
   /// Get the number of bytes pending sent by the session
   uint64_t bytes_pending() const noexcept { return bytes_pending_; }
