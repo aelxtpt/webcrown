@@ -1,7 +1,6 @@
 #include "webcrown/server/http/http_session.hpp"
 #include "webcrown/server/http/http_server.hpp"
-#include "Server/Http/HttpContext.hpp"
-#include "Server/Http/HttpRequest.hpp"
+#include "webcrown/server/http/parser.hpp"
 
 #include <algorithm>
 
@@ -20,11 +19,17 @@ http_session::http_session(
 
 void http_session::on_received(void const* buffer, std::size_t size)
 {
-  std::shared_ptr<HttpEndpoint> endpoint_handler{nullptr};
+    std::error_code ec{};
 
-  // parser
+    // parser
+    parser p;
+    p.parse_start_line(static_cast<const char*>(buffer), size, ec);
 
-  // middlewares
+    // middleware
+//    for(auto it = middlewares_.crbegin(); it < middlewares_.crend(); ++it)
+//    {
+//        //it->on_setup()
+//    }
 
 }
 

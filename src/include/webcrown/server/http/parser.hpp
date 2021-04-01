@@ -6,7 +6,7 @@
 #include <unordered_map>
 
 #include "webcrown/server/http/method.hpp"
-#include "webcrown/server/http/enums.hpp"
+#include "enums.hpp"
 #include "webcrown/server/http/error.hpp"
 #include "webcrown/server/http/detail/parser.hpp"
 

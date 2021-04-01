@@ -1,5 +1,6 @@
 #include "webcrown/server/http/http_server.hpp"
-//#include "webcrown/server/http/http.hpp"
+//#include "webcrown_http/server/http/http.hpp"
+#include "webcrown/server/http/http_session.hpp"
 
 namespace webcrown {
 namespace server {
@@ -14,7 +15,6 @@ http_server::http_server(
   : server(logger, service, port_num, address, context)
   , context_(context)
 {
-  
 }
 
 std::shared_ptr<session>
@@ -28,9 +28,15 @@ http_server::create_session(uint64_t session_id,
         logger,
         context_);
 
-  session->controllers(controllers_);
+  session->middlewares(middlewares_);
 
   return session;
+}
+
+void
+http_server::add_middleware(std::shared_ptr<middleware> const middleware)
+{
+    middlewares_.push_front(middleware);
 }
 
 }}}

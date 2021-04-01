@@ -1,56 +1,46 @@
 #pragma once
-#include "Server/service.hpp"
-#include "Server/Http/http_server.hpp"
-#include "Server/Http/IController.hpp"
+#include "webcrown/server/service.hpp"
+#include "webcrown/server/http/http_server.hpp"
 
 #include <spdlog/spdlog.h>
 #include <spdlog/sinks/stdout_color_sinks.h>
 
-
 namespace webcrown {
 
-class WebCrown
+class webcrown_http
 {
   std::shared_ptr<server::service> service_;
   std::shared_ptr<server::http::http_server> server_;
 
   std::shared_ptr<spdlog::logger> logger_;
-
-  // TODO: So much overhead, we will need copy various requests ??
-  std::vector<std::shared_ptr<server::http::IController>> controllers_;
-
 public:
 
-  explicit WebCrown(
+  explicit webcrown_http(
       std::string_view address,
       uint16_t port_number,
-      std::shared_ptr<asio::ssl::context> const& context,
-      std::vector<std::shared_ptr<server::http::IController>> const& controllers)
+      std::shared_ptr<asio::ssl::context> const& context)
   {
     initialize_logger();
 
-    controllers_ = controllers; // Copy :(
     service_ = std::make_shared<server::service>(logger_);
     server_ = std::make_shared<server::http::http_server>(
           logger_,
           service_,
           port_number,
           std::move(address),
-          context,
-          controllers);
+          context);
   }
 
-  WebCrown(WebCrown const&) = delete;
-  WebCrown(WebCrown&&) = delete;
+  webcrown_http(webcrown_http const&) = delete;
+  webcrown_http(webcrown_http&&) = delete;
 
-  WebCrown& operator=(WebCrown const&) = delete;
-  WebCrown& operator=(WebCrown&&) = delete;
+  webcrown_http& operator=(webcrown_http const&) = delete;
+  webcrown_http& operator=(webcrown_http&&) = delete;
 
-  virtual ~WebCrown() = default;
+  virtual ~webcrown_http() = default;
 
   std::shared_ptr<server::service>& service() noexcept { return service_; }
   std::shared_ptr<server::http::http_server>& server() noexcept { return server_; }
-
 
   virtual void start()
   {
@@ -58,16 +48,16 @@ public:
 
     while (!service_->is_started())
     {
-      //pthread_yield();
-      sched_yield();
+      pthread_yield();
+      //sched_yield();
     }
 
     server_->start();
 
     while (!server_->is_started())
     {
-        //pthread_yield();
-        sched_yield();
+        pthread_yield();
+        //sched_yield();
     }
   }
 

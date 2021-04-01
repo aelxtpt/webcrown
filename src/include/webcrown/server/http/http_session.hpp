@@ -1,6 +1,7 @@
 #pragma once
 #include "webcrown/server/session.hpp"
-#include "webcrown/server/Http/HttpRequest.hpp"
+#include "webcrown/server/http/middlewares/http_middleware.hpp"
+
 
 namespace webcrown {
 namespace server {
@@ -10,7 +11,7 @@ class http_server;
 
 class http_session : public session, public std::enable_shared_from_this<http_session>
 {
-  HttpRequest request_;
+    std::deque<std::shared_ptr<middleware>> middlewares_;
 public:
   explicit http_session(
       uint64_t session_id,
@@ -25,6 +26,9 @@ public:
   http_session& operator=(http_session&&) = delete;
 
   ~http_session() = default;
+
+  void middlewares(std::deque<std::shared_ptr<middleware>> const& middlewares) noexcept
+  { middlewares_ = middlewares; }
 
   void on_received(void const* buffer, std::size_t size) override;
 };

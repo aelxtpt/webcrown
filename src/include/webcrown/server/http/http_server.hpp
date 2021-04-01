@@ -1,13 +1,11 @@
 #pragma once
 #include "webcrown/server/server.hpp"
 #include "webcrown/server/service.hpp"
-#include "webcrown/server/http/http_middleware.hpp"
+#include "webcrown/server/http/middlewares/http_middleware.hpp"
 
 namespace webcrown {
 namespace server {
 namespace http {
-
-class http_session;
 
 class http_server : public server
 {
@@ -16,7 +14,7 @@ class http_server : public server
   /// by OpenSSL library
   std::shared_ptr<asio::ssl::context> context_;
 
-  middlewares_
+  std::deque<std::shared_ptr<middleware>> middlewares_;
 public:
   explicit http_server(
       std::shared_ptr<spdlog::logger> logger,
@@ -32,6 +30,8 @@ public:
   http_server& operator=(http_server&&) = delete;
 
   ~http_server() = default;
+
+  void add_middleware(std::shared_ptr<middleware> const middleware);
 
   // SslServer interface
 private:

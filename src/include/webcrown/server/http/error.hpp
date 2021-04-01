@@ -37,7 +37,7 @@ class http_error_category : public std::error_category
 public:
     const char* name() const noexcept override
     {
-        return "webcrown http error";
+        return "webcrown_http http error";
     }
 
     std::string message(int ec) const override
@@ -63,7 +63,7 @@ public:
             case http_error::bad_field_value:
                 return "http bad field value";
             default:
-                return "unknown webcrown http error";
+                return "unknown webcrown_http http error";
         }
     }
 
