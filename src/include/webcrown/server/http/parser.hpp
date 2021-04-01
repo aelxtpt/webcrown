@@ -9,6 +9,7 @@
 #include "enums.hpp"
 #include "webcrown/server/http/error.hpp"
 #include "webcrown/server/http/detail/parser.hpp"
+#include "webcrown/server/http/http_request.hpp"
 
 namespace webcrown {
 namespace server {
@@ -57,7 +58,7 @@ public:
     /// \param buffer
     /// \param size
     /// \param ec
-    void parse_start_line(const char* buffer, size_t size, std::error_code& ec);
+    std::optional<http_request> parse_start_line(const char* buffer, size_t size, std::error_code& ec);
 
     void parse_message_header(char const*& it, char const* last, std::unordered_map<std::string, std::string>& headers, std::error_code& ec);
 
@@ -67,7 +68,7 @@ public:
 
     void parse_body(const char*& it, char const* last, std::string_view& body, std::error_code& ec);
 
-    /// Extract the HTTP method in the buffer
+    /// Extract the HTTP method1 in the buffer
     /// \param it pointer to the first position on the buffer
     /// \param last end of the buffer
     /// \param method string_view result
@@ -89,12 +90,12 @@ public:
     void parse_protocol(char const*& it, char const* last, int& protocol_version, std::error_code& ec);
 
     /// Returns the http parse phase
-    /// \return parse_phase enum
-    parse_phase parse_phase() const noexcept { return parse_phase_; }
+    /// \return parsephase enum
+    parse_phase parsephase() const noexcept { return parse_phase_; }
 };
 
 inline
-void
+std::optional<http_request>
 parser::parse_start_line(const char *buffer, size_t size, std::error_code& ec)
 {
     parse_phase_ = parse_phase::started;
@@ -105,7 +106,7 @@ parser::parse_start_line(const char *buffer, size_t size, std::error_code& ec)
     // last character in the buffer
     char const* last = buffer + size;
 
-    // request-line   = method SP request-target SP HTTP-version CRLF
+    // request-line   = method1 SP request-target SP HTTP-version CRLF
 
     // Primeira coisa é procurar o methodo
     // Porque imagina, iterar todo o buffer pra achar o CRLF
@@ -115,41 +116,48 @@ parser::parse_start_line(const char *buffer, size_t size, std::error_code& ec)
     std::string_view method;
     parse_method(it, last, method, ec);
     if (ec)
-        return;
+        return std::nullopt;
 
     std::string_view target;
     parse_target(it, last, target, ec);
     if (ec)
-        return;
+        return std::nullopt;
 
     int protocol_version{};
     parse_protocol(it, last, protocol_version, ec);
     if (ec)
-        return;
+        return std::nullopt;
 
     // we will only support http 1.1 at the moment
     if (protocol_version < 11 || protocol_version > 11)
     {
         ec = make_error(http_error::bad_version);
-        return;
+        return std::nullopt;
     }
 
     if(it + 2 > last)
     {
         ec = make_error(http_error::incomplete_start_line);
-        return;
+        return std::nullopt;
     }
 
     if(it[0] != '\r' && it[1] != '\n')
     {
         ec = make_error(http_error::invalid_request_line);
-        return;
+        return std::nullopt;
     }
 
     // Skip the CRLR
     it += 2;
 
-    //parse_message_header(it, last, ec);
+    std::unordered_map<std::string, std::string> headers;
+    parse_message_header(it, last, headers, ec);
+
+    std::string_view body;
+    parse_body(it, last, body, ec);
+
+    http_request request(method, protocol_version, headers, body);
+    return request;
 }
 
 inline

@@ -23,7 +23,14 @@ void http_session::on_received(void const* buffer, std::size_t size)
 
     // parser
     parser p;
-    p.parse_start_line(static_cast<const char*>(buffer), size, ec);
+    auto result = p.parse_start_line(static_cast<const char*>(buffer), size, ec);
+    if (!result)
+    {
+        // error
+        return;
+    }
+
+
 
     // middleware
 //    for(auto it = middlewares_.crbegin(); it < middlewares_.crend(); ++it)

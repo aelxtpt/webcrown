@@ -24,16 +24,16 @@ enum class method : std::uint8_t
     // TODO: add other methods
 };
 
-/// Converts HTTP method enum to the HTTP method string
-/// \param m method enum
-/// \return HTTP method as string
+/// Converts HTTP method enum to the HTTP method1 string
+/// \param m method1 enum
+/// \return HTTP method1 as string
 inline
 std::string_view
 to_string(method m);
 
-/// Converts a HTTP method string to the HTTP method enum
-/// \param m string method
-/// \return HTTP method as enum
+/// Converts a HTTP method string to the HTTP method1 enum
+/// \param m string method1
+/// \return HTTP method1 as enum
 inline
 method
 to_method(std::string_view m);

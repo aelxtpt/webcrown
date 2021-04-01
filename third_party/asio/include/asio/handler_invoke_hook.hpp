@@ -36,9 +36,9 @@ namespace asio {
  *
  * When asynchronous operations are composed from other asynchronous
  * operations, all intermediate handlers should be invoked using the same
- * method as the final handler. This is required to ensure that user-defined
+ * method1 as the final handler. This is required to ensure that user-defined
  * objects are not accessed in a way that may violate the guarantees. This
- * hooking function ensures that the invoked method used for the final handler
+ * hooking function ensures that the invoked method1 used for the final handler
  * is accessible at each intermediate step.
  *
  * Implement asio_handler_invoke for your own handlers to specify a custom

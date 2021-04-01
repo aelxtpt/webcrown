@@ -15,7 +15,7 @@ session::session(
   , bytes_received_(0)
   , bytes_sent_(0)
   , server_(server)
-  , io_service_(server_->service()->asio_service())
+  , io_service_(server_->service1()->asio_service())
   , stream_socket_(*io_service_, *context)
   , connected_(false)
   , handshaked_(false)
@@ -111,7 +111,7 @@ bool session::disconnect(std::error_code error)
     server_->unregister_session(session_id_);
   };
 
-  server_->service()->dispatch(unregister_session_handler);
+  server_->service1()->dispatch(unregister_session_handler);
 
   return true;
 }

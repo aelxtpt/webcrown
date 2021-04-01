@@ -22,7 +22,7 @@ class session
   uint64_t bytes_sent_;
 
   /// Server & session
-  std::shared_ptr<server> server_;
+  std::shared_ptr<webcrown::server::server> server_;
 
   /// Asio IO service
   std::shared_ptr<asio::io_service> io_service_;
@@ -70,7 +70,7 @@ public:
   ~session() = default;
 
   /// Get the connected server
-  std::shared_ptr<server>& server() noexcept { return server_; }
+  std::shared_ptr<webcrown::server::server>& server() noexcept { return server_; }
 
   /// Get the number of bytes pending sent by the session
   uint64_t bytes_pending() const noexcept { return bytes_pending_; }

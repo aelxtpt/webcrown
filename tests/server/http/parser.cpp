@@ -9,7 +9,7 @@ TEST(HTTP_PARSER, parse_method_with_invalid_characters_should_return_error)
     using webcrown::server::http::parser;
 
     // Expected
-    const std::string expected_error_msg = "http bad method";
+    const std::string expected_error_msg = "http bad method1";
     const parse_phase expected_parse_phase = parse_phase::parse_method;
 
     // Scenario
@@ -26,7 +26,7 @@ TEST(HTTP_PARSER, parse_method_with_invalid_characters_should_return_error)
 
     // Assert
     ASSERT_EQ(expected_error_msg, ec.message());
-    ASSERT_EQ(expected_parse_phase, p.parse_phase());
+    ASSERT_EQ(expected_parse_phase, p.parsephase());
 }
 
 TEST(HTTP_PARSER, parse_method_with_incomplete_requestline_should_return_error)
@@ -52,7 +52,7 @@ TEST(HTTP_PARSER, parse_method_with_incomplete_requestline_should_return_error)
 
     // Assert
     ASSERT_EQ(expected_error_msg, ec.message());
-    ASSERT_EQ(expected_parse_phase, p.parse_phase());
+    ASSERT_EQ(expected_parse_phase, p.parsephase());
 }
 
 TEST(HTTP_PARSER, parse_method_with_method_without_space_should_return_error)
@@ -61,7 +61,7 @@ TEST(HTTP_PARSER, parse_method_with_method_without_space_should_return_error)
     using webcrown::server::http::parser;
 
     // Expected
-    const std::string expected_error_msg = "http bad method";
+    const std::string expected_error_msg = "http bad method1";
     const parse_phase expected_parse_phase = parse_phase::parse_method;
 
     // Scenario
@@ -78,7 +78,7 @@ TEST(HTTP_PARSER, parse_method_with_method_without_space_should_return_error)
 
     // Assert
     ASSERT_EQ(expected_error_msg, ec.message());
-    ASSERT_EQ(expected_parse_phase, p.parse_phase());
+    ASSERT_EQ(expected_parse_phase, p.parsephase());
 }
 
 TEST(HTTP_PARSER, parse_method_filled_with_space_string_should_return_error)
@@ -87,7 +87,7 @@ TEST(HTTP_PARSER, parse_method_filled_with_space_string_should_return_error)
     using webcrown::server::http::parser;
 
     // Expected
-    const std::string expected_error_msg = "http bad method";
+    const std::string expected_error_msg = "http bad method1";
     const parse_phase expected_parse_phase = parse_phase::parse_method;
 
     // Scenario
@@ -104,7 +104,7 @@ TEST(HTTP_PARSER, parse_method_filled_with_space_string_should_return_error)
 
     // Assert
     ASSERT_EQ(expected_error_msg, ec.message());
-    ASSERT_EQ(expected_parse_phase, p.parse_phase());
+    ASSERT_EQ(expected_parse_phase, p.parsephase());
 }
 
 TEST(HTTP_PARSER, parse_method_with_two_spaces_after_should_return_expected_method)
@@ -132,7 +132,7 @@ TEST(HTTP_PARSER, parse_method_with_two_spaces_after_should_return_expected_meth
 
     // Assert
     ASSERT_EQ(expected_method, std::string(method));
-    ASSERT_EQ(expected_parse_phase, p.parse_phase());
+    ASSERT_EQ(expected_parse_phase, p.parsephase());
 }
 
 TEST(HTTP_PARSER, parse_target_with_space_at_begin_should_return_error)
@@ -158,7 +158,7 @@ TEST(HTTP_PARSER, parse_target_with_space_at_begin_should_return_error)
 
     // Assert
     ASSERT_EQ(expected_error_msg, ec.message());
-    ASSERT_EQ(expected_parse_phase, p.parse_phase());
+    ASSERT_EQ(expected_parse_phase, p.parsephase());
 }
 
 TEST(HTTP_PARSER, parse_target_with_incomplete_request_line_should_return_error)
@@ -184,7 +184,7 @@ TEST(HTTP_PARSER, parse_target_with_incomplete_request_line_should_return_error)
 
     // Assert
     ASSERT_EQ(expected_error_msg, ec.message());
-    ASSERT_EQ(expected_parse_phase, p.parse_phase());
+    ASSERT_EQ(expected_parse_phase, p.parsephase());
 }
 
 TEST(HTTP_PARSER, parse_target_with_two_spaces_after_should_return_expected_target)
@@ -212,7 +212,7 @@ TEST(HTTP_PARSER, parse_target_with_two_spaces_after_should_return_expected_targ
 
     // Assert
     ASSERT_EQ(expected_target, std::string(target));
-    ASSERT_EQ(expected_parse_phase, p.parse_phase());
+    ASSERT_EQ(expected_parse_phase, p.parsephase());
 }
 
 TEST(HTTP_PARSER, parse_protocol_filled_with_space_should_return_error)
@@ -238,7 +238,7 @@ TEST(HTTP_PARSER, parse_protocol_filled_with_space_should_return_error)
 
     // Assert
     ASSERT_EQ(expected_error_msg, ec.message());
-    ASSERT_EQ(expected_parse_phase, p.parse_phase());
+    ASSERT_EQ(expected_parse_phase, p.parsephase());
 }
 
 TEST(HTTP_PARSER, parse_protocol_incosistent_version_should_return_error)
@@ -264,7 +264,7 @@ TEST(HTTP_PARSER, parse_protocol_incosistent_version_should_return_error)
 
     // Assert
     ASSERT_EQ(expected_error_msg, ec.message());
-    ASSERT_EQ(expected_parse_phase, p.parse_phase());
+    ASSERT_EQ(expected_parse_phase, p.parsephase());
 }
 
 TEST(HTTP_PARSER, parse_protocol_all_ok_should_return_expected_version)
@@ -290,7 +290,7 @@ TEST(HTTP_PARSER, parse_protocol_all_ok_should_return_expected_version)
 
     // Assert
     ASSERT_EQ(expected_version, protocol);
-    ASSERT_EQ(expected_parse_phase, p.parse_phase());
+    ASSERT_EQ(expected_parse_phase, p.parsephase());
 }
 
 TEST(HTTP_PARSER, parse_message_header)

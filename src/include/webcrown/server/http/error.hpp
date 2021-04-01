@@ -53,7 +53,7 @@ public:
             case http_error::invalid_message_header_crlf:
                 return "http invalid message header crlf";
             case http_error::bad_method:
-                return "http bad method";
+                return "http bad method1";
             case http_error::bad_target:
                 return "http bad target";
             case http_error::bad_version:

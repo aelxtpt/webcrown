@@ -75,7 +75,7 @@ public:
   bool is_started() const noexcept { return started_; }
 
   // Get the Asio Service
-  std::shared_ptr<service>& service() noexcept { return service_; }
+  std::shared_ptr<webcrown::server::service>& service1() noexcept { return service_; }
 
   /// Unregister the given session
   ///
