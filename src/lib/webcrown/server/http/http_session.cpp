@@ -30,13 +30,14 @@ void http_session::on_received(void const* buffer, std::size_t size)
         return;
     }
 
+    http_response response{};
+    // middlewares
+    for(auto const& middleware : middlewares_)
+    {
+        middleware->on_setup(*result, response);
+    }
 
-
-    // middleware
-//    for(auto it = middlewares_.crbegin(); it < middlewares_.crend(); ++it)
-//    {
-//        //it->on_setup()
-//    }
+    // send response
 
 }
 

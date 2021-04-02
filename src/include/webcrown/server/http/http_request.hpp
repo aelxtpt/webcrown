@@ -10,14 +10,20 @@ class http_request
 {
     method method_;
     int protocol_;
+    std::string target_;
     std::unordered_map<std::string, std::string> headers_;
     std::string body_;
 public:
     explicit http_request(
-        std::basic_string_view<char> method,
+        method method,
         int protocol,
+        std::string_view target,
         std::unordered_map<std::string, std::string> const& headers,
         std::string_view body)
+        : method_(method)
+        , protocol_(protocol)
+        , headers_(headers)
+        , body_(body)
     {}
 
     method method1() const noexcept { return method_; }

@@ -1,6 +1,4 @@
-#ifndef WEBCROWN_METHOD_HPP
-#define WEBCROWN_METHOD_HPP
-
+#pragma once
 #include <string_view>
 
 // Faz sentido, cada enum ter um arquivo
@@ -38,9 +36,6 @@ inline
 method
 to_method(std::string_view m);
 
-#include "method.inl"
 }}}
 
-
-
-#endif //WEBCROWN_METHOD_HPP
+#include "method.inl"

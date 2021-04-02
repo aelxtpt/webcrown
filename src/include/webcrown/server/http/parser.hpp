@@ -10,6 +10,8 @@
 #include "webcrown/server/http/error.hpp"
 #include "webcrown/server/http/detail/parser.hpp"
 #include "webcrown/server/http/http_request.hpp"
+#include "webcrown/server/http/http_response.hpp"
+#include "webcrown/server/http/method.hpp"
 
 namespace webcrown {
 namespace server {
@@ -156,7 +158,7 @@ parser::parse_start_line(const char *buffer, size_t size, std::error_code& ec)
     std::string_view body;
     parse_body(it, last, body, ec);
 
-    http_request request(method, protocol_version, headers, body);
+    http_request request(to_method(method), protocol_version, target, headers, body);
     return request;
 }
 
