@@ -14,7 +14,7 @@ to_string(method m)
 method
 to_method(std::string_view m)
 {
-    // minimum http method1 size
+    // minimum http method size
     if (m.size() < 3)
         return method::unknown;
 

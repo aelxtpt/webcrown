@@ -70,7 +70,7 @@ public:
 
     void parse_body(const char*& it, char const* last, std::string_view& body, std::error_code& ec);
 
-    /// Extract the HTTP method1 in the buffer
+    /// Extract the HTTP method in the buffer
     /// \param it pointer to the first position on the buffer
     /// \param last end of the buffer
     /// \param method string_view result
@@ -108,7 +108,7 @@ parser::parse_start_line(const char *buffer, size_t size, std::error_code& ec)
     // last character in the buffer
     char const* last = buffer + size;
 
-    // request-line   = method1 SP request-target SP HTTP-version CRLF
+    // request-line   = method SP request-target SP HTTP-version CRLF
 
     // Primeira coisa é procurar o methodo
     // Porque imagina, iterar todo o buffer pra achar o CRLF

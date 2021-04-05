@@ -6,6 +6,7 @@ namespace http {
 
 class router
 {
+    // Parse at compile time ?
     //  path('articles/2003/'
     //    path('articles/<int:year>/'
     //    path('articles/<int:year>/<int:month>/'

@@ -9,7 +9,7 @@ TEST(HTTP_PARSER, parse_method_with_invalid_characters_should_return_error)
     using webcrown::server::http::parser;
 
     // Expected
-    const std::string expected_error_msg = "http bad method1";
+    const std::string expected_error_msg = "http bad method";
     const parse_phase expected_parse_phase = parse_phase::parse_method;
 
     // Scenario
@@ -61,7 +61,7 @@ TEST(HTTP_PARSER, parse_method_with_method_without_space_should_return_error)
     using webcrown::server::http::parser;
 
     // Expected
-    const std::string expected_error_msg = "http bad method1";
+    const std::string expected_error_msg = "http bad method";
     const parse_phase expected_parse_phase = parse_phase::parse_method;
 
     // Scenario
@@ -87,7 +87,7 @@ TEST(HTTP_PARSER, parse_method_filled_with_space_string_should_return_error)
     using webcrown::server::http::parser;
 
     // Expected
-    const std::string expected_error_msg = "http bad method1";
+    const std::string expected_error_msg = "http bad method";
     const parse_phase expected_parse_phase = parse_phase::parse_method;
 
     // Scenario
