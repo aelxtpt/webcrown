@@ -26,7 +26,7 @@ public:
         , body_(body)
     {}
 
-    method method() const noexcept { return method_; }
+    method method1() const noexcept { return method_; }
 };
 
 }}}

@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <system_error>
 #include <unordered_map>
+#include <cstring>
 
 #include "webcrown/server/http/method.hpp"
 #include "enums.hpp"

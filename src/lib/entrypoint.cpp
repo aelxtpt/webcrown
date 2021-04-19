@@ -11,7 +11,8 @@ int main()
 {
     try
     {
-        const unsigned short port_num = 8443;
+        // curl --verbose --cacert server.crt --location --request GET 'https://localhost:8443'
+	    const unsigned short port_num = 8443;
 
         auto context = std::make_shared<asio::ssl::context>(asio::ssl::context::tlsv12);
         context->set_password_callback(
@@ -31,7 +32,6 @@ int main()
                                       [](http::http_request const& request,
                                           http::http_response& response)
         {
-
         });
 
         crown.server()->add_middleware(router_middleware);

@@ -9,7 +9,9 @@ namespace http {
 
 class http_server;
 
-class http_session : public session, public std::enable_shared_from_this<http_session>
+class http_session :
+	public webcrown::server::session,
+	public std::enable_shared_from_this<http_session>
 {
     std::deque<std::shared_ptr<middleware>> middlewares_;
 public:
