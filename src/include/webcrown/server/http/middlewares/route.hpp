@@ -4,7 +4,9 @@ namespace webcrown {
 namespace server {
 namespace http {
 
-class router
+#include <string>
+
+class route
 {
     // Parse at compile time ?
     //  path('articles/2003/'
@@ -12,9 +14,14 @@ class router
     //    path('articles/<int:year>/<int:month>/'
     //    path('articles/<int:year>/<int:month>/<slug:slug>/'
     std::string path_;
+    std::string uri_target_;
 public:
-    explicit router(std::string_view path)
+    explicit route(std::string_view path)
+        : path_(path)
     {}
+
+private:
+    void parse();
 };
 
 }}}

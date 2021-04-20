@@ -10,6 +10,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set (CMAKE_CXX_FLAGS "-Werror=return-type")
 
 include_directories(${CMAKE_SOURCE_DIR}/third_party/asio/include)
+include_directories(${CMAKE_SOURCE_DIR}/third_party/nlohmann)
 include_directories(${CMAKE_SOURCE_DIR}/src/include)
 include_directories(${CMAKE_SOURCE_DIR}/submodules/spdlog/include)
 

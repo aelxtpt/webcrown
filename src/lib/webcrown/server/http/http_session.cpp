@@ -32,13 +32,10 @@ void http_session::on_received(void const* buffer, std::size_t size)
 
     http_response response{};
     // middlewares
-    // for(auto const& middleware : middlewares_)
-    // {
-    //     middleware->on_setup(*result, response);
-    // }
-
-    response.set_status(http_status::ok);
-    response.set_body("{ top }");
+     for(auto const& middleware : middlewares_)
+     {
+         middleware->on_setup(*result, response);
+     }
 
     // send response
     send_async(response.build());
