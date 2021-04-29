@@ -6,13 +6,13 @@
 #include <unordered_map>
 #include <cstring>
 
-#include "webcrown/server/http/method.hpp"
+#include "webcrown/server/http/http_method.hpp"
 #include "enums.hpp"
 #include "webcrown/server/http/error.hpp"
 #include "webcrown/server/http/detail/parser.hpp"
 #include "webcrown/server/http/http_request.hpp"
 #include "webcrown/server/http/http_response.hpp"
-#include "webcrown/server/http/method.hpp"
+#include "webcrown/server/http/http_method.hpp"
 
 namespace webcrown {
 namespace server {
@@ -71,7 +71,7 @@ public:
 
     void parse_body(const char*& it, char const* last, std::string_view& body, std::error_code& ec);
 
-    /// Extract the HTTP method in the buffer
+    /// Extract the HTTP get_method in the buffer
     /// \param it pointer to the first position on the buffer
     /// \param last end of the buffer
     /// \param method string_view result
@@ -109,7 +109,7 @@ parser::parse_start_line(const char *buffer, size_t size, std::error_code& ec)
     // last character in the buffer
     char const* last = buffer + size;
 
-    // request-line   = method SP request-target SP HTTP-version CRLF
+    // request-line   = get_method SP request-target SP HTTP-version CRLF
 
     // Primeira coisa é procurar o methodo
     // Porque imagina, iterar todo o buffer pra achar o CRLF

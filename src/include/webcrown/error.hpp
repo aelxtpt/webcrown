@@ -5,21 +5,13 @@
 
 namespace webcrown {
 
-class webcrown_error : public std::error_category
-{
+class webcrown_error : public std::error_category {
 public:
-    const char* name() const noexcept override
-    {
-        return "webcrown_http error";
-    }
+  const char *name() const noexcept override { return "webcrown_http error"; }
 
-    std::string message(int ec) const override
-    {
-        return "";
-    }
-
+  std::string message(int ec) const override { return ""; }
 };
 
-}
+} // namespace webcrown
 
-#endif //WEBCROWN_ERROR_HPP
+#endif // WEBCROWN_ERROR_HPP

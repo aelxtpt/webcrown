@@ -44,6 +44,8 @@ http_response::build()
     // This will be the first step, so clean buffer
     buffer_.clear();
 
+    // TODO: add checking if the status, etc are filled
+
     auto status_reason = make_status(status_);
 
     // HTTP-Version

@@ -12,7 +12,7 @@ namespace webcrown {
 namespace server {
 namespace http {
 
-enum class method : std::uint8_t
+enum class http_method : std::uint8_t
 {
     unknown = 0,
 
@@ -22,18 +22,18 @@ enum class method : std::uint8_t
     // TODO: add other methods
 };
 
-/// Converts HTTP method enum to the HTTP method string
-/// \param m method enum
-/// \return HTTP method as string
+/// Converts HTTP http_method enum to the HTTP get_method string
+/// \param m get_method enum
+/// \return HTTP get_method as string
 inline
 std::string_view
-to_string(method m);
+to_string(http_method m);
 
-/// Converts a HTTP method string to the HTTP method enum
-/// \param m string method
-/// \return HTTP method as enum
+/// Converts a HTTP http_method string to the HTTP get_method enum
+/// \param m string get_method
+/// \return HTTP get_method as enum
 inline
-method
+http_method
 to_method(std::string_view m);
 
 }}}

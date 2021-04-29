@@ -6,26 +6,26 @@ namespace server {
 namespace http {
 
 std::string_view
-to_string(method m)
+to_string(http_method m)
 {
     return "";
 }
 
-method
+http_method
 to_method(std::string_view m)
 {
-    // minimum http method size
+    // minimum http get_method size
     if (m.size() < 3)
-        return method::unknown;
+        return http_method::unknown;
 
     if (m == "GET")
-        return method::get;
+        return http_method::get;
     else if(m == "POST")
-        return method::post;
+        return http_method::post;
     else if(m == "DELETE")
-        return method::delet;
+        return http_method::delet;
     else
-        return method::unknown;
+        return http_method::unknown;
 }
 
 }}}

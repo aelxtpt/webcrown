@@ -11,6 +11,7 @@ namespace detail {
 // https://tools.ietf.org/html/rfc5234#appendix-B.1
 
 // TODO: Entender, na aula de standardford lá tem isso
+inline
 char is_token_char(char c)
 {
     /*
@@ -41,6 +42,7 @@ char is_token_char(char c)
     return tab[static_cast<unsigned char>(c)];
 }
 
+inline
 bool
 is_pathchar(char c)
 {

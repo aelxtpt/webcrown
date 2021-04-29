@@ -14,6 +14,7 @@ class http_session :
 	public std::enable_shared_from_this<http_session>
 {
     std::deque<std::shared_ptr<middleware>> middlewares_;
+    std::shared_ptr<spdlog::logger> logger_;
 public:
   explicit http_session(
       uint64_t session_id,
