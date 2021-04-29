@@ -10,11 +10,8 @@ namespace server {
 namespace http {
 
 class routing_middleware : public middleware {
-  using route_callback =
-      std::function<void(http_request const &request, http_response &response)>;
 
-    std::unordered_map<std::shared_ptr<route>, route_callback> routers_;
-
+    std::vector<std::shared_ptr<route>> routers_;
 public:
   routing_middleware() = default;
 
@@ -31,9 +28,10 @@ public:
 	  // find route
 	  for (auto const &r : routers_)
 	  {
-		  if (r.first->is_match_with_target_request(request.target()))
+		  if (r->is_match_with_target_request(request.target()))
 		  {
-			  r.second(request, response);
+		      auto&& cb = r->callback();
+			  cb(request, response);
 			  route_found = true;
 			  break;
 		  }
@@ -47,9 +45,9 @@ public:
 	  }
   }
 
-  void add_router(std::shared_ptr<route> const route, route_callback callback) 
+  void add_router(std::shared_ptr<route> const route)
   {
-      routers_.emplace(route, callback);
+      routers_.push_back(route);
   }
 };
 

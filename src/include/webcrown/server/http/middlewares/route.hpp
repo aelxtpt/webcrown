@@ -4,7 +4,11 @@
 #include <stdexcept>
 #include <cassert>
 #include "webcrown/server/http/http_method.hpp"
+#include "webcrown/server/http/http_request.hpp"
+#include "webcrown/server/http/http_response.hpp"
+#include <utility>
 #include <vector>
+#include <functional>
 
 namespace webcrown {
 namespace server {
@@ -17,32 +21,31 @@ class route
     using path_parameter_value = std::string;
     using path_parameters_type = std::vector<std::pair<path_parameter_name, path_parameter_value>>;
 
+    using route_callback =
+        std::function<void(http_request const &request, http_response &response)>;
+
     // TODO: Parse at compile time ?
-    // This handler will match /user/alex, but not will match /user/ or /user
-    // /user/:username
-    //
-    // This handler will match /user/alex?firstname=lucas&lastname=Lima
-    // /user/alex
-    //
-    // /user/
-    //
     std::string path_;
     std::string uri_target_;
     http_method method_;
     path_parameters_type path_parameters_;
+    route_callback cb_;
 public:
-    explicit route(http_method method, std::string_view path)
+    explicit route(http_method method, std::string_view path, route_callback cb)
         : path_(path)
         , method_(method)
+        , cb_(std::move(cb))
     {
         parse();
     }
 
-    std::string uri_target() const noexcept { return uri_target_; }
+    [[nodiscard]] std::string uri_target() const noexcept { return uri_target_; }
 
     bool is_match_with_target_request(std::string_view target);
 
-    path_parameters_type path_parameters() const noexcept { return path_parameters_; }
+    [[nodiscard]] path_parameters_type path_parameters() const noexcept { return path_parameters_; }
+
+    [[nodiscard]] route_callback callback() const { return cb_; }
 
 private:
     void parse();
