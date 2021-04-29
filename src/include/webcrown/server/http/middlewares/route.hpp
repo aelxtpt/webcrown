@@ -76,29 +76,43 @@ route::is_match_with_target_request(std::string_view target)
     auto end = target.cend();
     auto it = begin;
 
-    // OK, we have an assert if the path doest not starts with '/',
-    // so we can assume that it+1 will skip the first slash
-    it++; // eat the '/'
-
-    // Find the first slash '/'
-    // It will be the real target
-    for(; it < end; ++it)
+    auto full_target = std::string(begin, end);
+    if (full_target == uri_target_)
     {
-        if (*it == '/')
-            break;
+        // we don't have any binding value next, so return
+        return true;
     }
 
-    auto real_target = std::string(begin, ++it);
+    // Ok, not equal.
+    // Maybe is a binding uri ?
+    // To check if it is a binding, we need find slash by the begin
+    bool match_binding_target{false};
+    for(; it < end; ++it)
+    {
+        // Found slash, check if match if the uri_target from the route
+        if (*it == '/')
+        {
+            auto real_target = std::string(begin, ++it);
+            if (real_target == uri_target_)
+            {
+                match_binding_target = true;
+                break;
+            }
+        }
+    }
 
-    if (real_target != uri_target_)
+    if (!match_binding_target)
+    {
+        // Not ? So this will be a 404 response
         return false;
+    }
 
     // Ok, the request is the our route
     // Now, we will parse the parameters
 
     // TODO: adjust to catch the query parameters with ?
 
-    auto find_next_path_parameter_value = [](const char* first, const char* last) -> std::optional<std::string>
+    auto find_next_path_parameter_value = [](const char*& first, const char* last) -> std::optional<std::string>
     {
         auto begin_on_current_buffer = first;
         auto& current_it = first;
@@ -122,6 +136,12 @@ route::is_match_with_target_request(std::string_view target)
         auto path_parameter_value = find_next_path_parameter_value(it, end);
         if (path_parameter_value)
             first->second.swap(*path_parameter_value);
+
+        // End of the uri or separator to a next value, we need eat it, because will break the lambda above
+        if(*it == '/')
+        {
+            ++it;
+        }
     }
 
 
@@ -169,10 +189,11 @@ route::parse()
         }
     }
 
+    // Ok, we have no path parameter bind
     if (uri_target_.empty())
     {
-        // TODO: move to compile time error
-        throw std::runtime_error("uri_target is empty");
+        uri_target_ = std::string(begin, it);
+        return;
     }
 
     // try find bind values
