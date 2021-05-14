@@ -27,7 +27,7 @@ void http_session::on_received(void const* buffer, std::size_t size)
     auto result = p.parse_start_line(static_cast<const char*>(buffer), size, ec);
     if (!result)
     {
-        // error
+        logger_->error("[http_session][on_received] failed to parser start line {}", ec.message());
         return;
     }
 
@@ -37,15 +37,13 @@ void http_session::on_received(void const* buffer, std::size_t size)
     {
         middleware->on_setup(*result, response);
     }
-    //response.set_status(http_status::ok);
-    //response.set_body("ola");
 
     // send response
     send_async(response.build());
-    logger_->info("Mensagem enviada para o client");
+    logger_->info("[http_session][on_received] Message sent to the client");
 
     // disconnect 
-    //disconnect();
+    disconnect();
 }
 
 }}}

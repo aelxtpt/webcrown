@@ -4,6 +4,7 @@
 #include <functional>
 #include <unordered_map>
 #include <memory>
+#include <spdlog/logger.h>
 
 namespace webcrown {
 namespace server {
@@ -12,8 +13,11 @@ namespace http {
 class routing_middleware : public middleware {
 
     std::vector<std::shared_ptr<route>> routers_;
+    std::shared_ptr<spdlog::logger> logger_;
 public:
-  routing_middleware() = default;
+    explicit routing_middleware(std::shared_ptr<spdlog::logger> logger)
+        : logger_(logger)
+    {}
 
   routing_middleware(routing_middleware const &) = delete;
   routing_middleware(routing_middleware &&) = delete;
@@ -28,10 +32,23 @@ public:
 	  // find route
 	  for (auto const &r : routers_)
 	  {
-		  if (r->is_match_with_target_request(request.target()))
+		  if (r->is_match_with_target_request(request.target()) && r->method() == request.method())
 		  {
 		      auto&& cb = r->callback();
-			  cb(request, response);
+
+		      try
+              {
+		          cb(request, response);
+              }
+		      catch(std::exception const& ex)
+              {
+		          logger_->error("[routing_middleware] Error on callback of the router. {}",
+                           ex.what());
+
+		          response.set_status(http_status::internal_server_error);
+		          break;
+              }
+
 			  route_found = true;
 			  break;
 		  }
@@ -41,7 +58,7 @@ public:
 	  // return http response 404
 	  if (!route_found)
 	  {
-		  // invoke http response 404
+	      response.set_status(http_status::not_found);
 	  }
   }
 

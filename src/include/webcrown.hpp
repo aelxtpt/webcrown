@@ -39,8 +39,10 @@ public:
 
   virtual ~webcrown_http() = default;
 
-  std::shared_ptr<server::service>& service() noexcept { return service_; }
-  std::shared_ptr<server::http::http_server>& server() noexcept { return server_; }
+    std::shared_ptr<server::service>& service() noexcept { return service_; }
+    std::shared_ptr<server::http::http_server>& server() noexcept { return server_; }
+
+    std::shared_ptr<spdlog::logger> logger() const noexcept { return logger_; }
 
   virtual void start()
   {

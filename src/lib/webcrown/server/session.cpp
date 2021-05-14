@@ -171,7 +171,7 @@ void session::try_receive()
 
     if (!is_handshaked())
     {
-        logger_->error("[SslSession][try_receive] Session is not handshaked");
+        logger_->warn("[SslSession][try_receive] Session is not handshaked, but you should not to worry, because this is probably the second read");
         return;
     }
 
@@ -181,7 +181,8 @@ void session::try_receive()
     {
         receiving_ = false;
 
-        logger_->info("Mensagem recebida do client");
+        logger_->info("[SslSession][try_receive][async_receive_handler] receiving message {} bytes",
+                      bytes_size);
 
         if (!is_handshaked())
         {

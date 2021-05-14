@@ -43,6 +43,8 @@ public:
 
     bool is_match_with_target_request(std::string_view target);
 
+    http_method method() const noexcept { return method_; }
+
     [[nodiscard]] path_parameters_type path_parameters() const noexcept { return path_parameters_; }
 
     [[nodiscard]] route_callback callback() const { return cb_; }

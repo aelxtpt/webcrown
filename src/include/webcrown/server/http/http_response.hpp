@@ -25,17 +25,27 @@ class http_response
     /// Parse it on rules :)
     std::unordered_map<std::string, std::string> headers_;
 public:
+    http_response();
 
     void set_status(http_status status) noexcept { status_ = status; }
 
     void add_header(std::string_view key, std::string_view value);
 
     void set_body(std::string_view body);
+
+    static http_response ok();
+    static http_response bad_request();
     
     /// Status-Line
     ///     Status-Line = HTTP-Version SP Status-Code SP Reason-Phrase CRLF
     std::string build();
 };
+
+/// Constructor
+inline
+http_response::http_response()
+    : status_(http_status::internal_server_error) // The developer don't setted the status on response
+{}
 
 inline
 std::string
