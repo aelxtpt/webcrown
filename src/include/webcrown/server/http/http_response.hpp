@@ -33,6 +33,9 @@ public:
 
     void set_body(std::string_view body);
 
+    std::string body() const noexcept { return body_; }
+    http_status status() const noexcept { return status_; }
+
     static http_response ok();
     static http_response bad_request();
     
