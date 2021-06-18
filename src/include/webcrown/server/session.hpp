@@ -8,8 +8,12 @@ namespace server {
 
 class server;
 
+struct NoSecureSocket{};
+struct SecureSocket{};
+
 /// This class mantains a socket with the SSL Client. Responsable to read and write
 /// data with the SSL Client.
+template<typename SocketSecurityT>
 class session {
     // The class SslServer is responsable
     // to connect and disconnect the session
@@ -142,6 +146,10 @@ private:
 
     /// Try to send pending data
     void try_send();
+
+    template<SocketSecurityT>
+    typename std::enable_if<(std::is_same<SocketSecurityT, SecureSocket>::value)>::type
+    handshake_secure_handler(asio::error_code ec);
 
     /// Event dispatched when the session is connected
     virtual void on_connected() {};

@@ -28,9 +28,9 @@ server::server(
 
 bool server::start()
 {
-    logger_->info("[SslServer][start] Starting SSL Server");
+    logger_->info("[Server][start] Starting SSL Server");
 
-    assert(!is_started() && "SSL Server is already started");
+    assert(!is_started() && "Server is already started");
     if (is_started())
     {
         logger_->error("[SslServer][start] SSL Server is already started");
@@ -104,12 +104,12 @@ bool server::start()
 
 void server::accept()
 {
-    logger_->info("[SslServer][accept] Initializing the server accept");
+    logger_->info("[Server][accept] Initializing the server accept");
 
-    assert(is_started() && "SSL Server is not started");
+    assert(is_started() && "Server is not started");
     if (!is_started())
     {
-        logger_->error("[SslServer][accept] SSL Server is not started");
+        logger_->error("[Server][accept] SSL Server is not started");
         return;
     }
 
@@ -119,7 +119,7 @@ void server::accept()
     {
         if (!is_started())
         {
-            logger_->error("[SslServer][accept][accept_handler] SSL Server is not started");
+            logger_->error("[Server][accept][accept_handler] Server is not started");
             return;
         }
 
@@ -128,20 +128,20 @@ void server::accept()
         // is a shared_ptr.
         session_ = create_session(++last_generated_session_id_, self, logger_);
 
-        logger_->info("[SslServer][accept][accept_handler] Session {} was created",
-                  session_->session_id());
+        logger_->info("[Server][accept][accept_handler] Session {} was created",
+            session_->session_id());
 
         auto async_accept_handler = [this, self](std::error_code ec)
         {
             if (!is_started())
             {
-                logger_->error("[SslServer][accept][accept_handler][async_accept_handler] SSL Server is not started");
+                logger_->error("[Server][accept][accept_handler][async_accept_handler] SSL Server is not started");
                 return;
             }
 
             if (ec)
             {
-                logger_->error("[SslServer][accept][accept_handler][async_accept_handler] Error on async_accept. Code: {}. Message: {}",
+                logger_->error("[Server][accept][accept_handler][async_accept_handler] Error on async_accept. Code: {}. Message: {}",
                            ec.value(),
                            ec.message());
                 return;
@@ -158,7 +158,7 @@ void server::accept()
         };
 
         // Waiting for the next request
-        logger_->info("[SslServer][accept][accept_handler] Waiting for the next request...");
+        logger_->info("[Server][accept][accept_handler] Waiting for the next request...");
         socket_acceptor_.async_accept(session_->socket(), async_accept_handler);
     };
 

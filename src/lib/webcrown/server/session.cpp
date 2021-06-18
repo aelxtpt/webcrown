@@ -5,7 +5,8 @@
 namespace webcrown {
 namespace server {
 
-session::session(
+template<typename SocketSecurityT>
+session<SocketSecurityT>::session(
     uint64_t session_id,
     std::shared_ptr<webcrown::server::server> const& server,
     std::shared_ptr<spdlog::logger> const& logger,
@@ -26,7 +27,8 @@ session::session(
     , sending_(false)
 {}
 
-void session::connect()
+template<typename SocketSecurityT>
+void session<SocketSecurityT>::connect()
 {
     bytes_pending_ = 0;
     bytes_sending_ = 0;
@@ -41,41 +43,14 @@ void session::connect()
     // Call event
     on_connected();
 
-    auto async_handshake_handler = [this](asio::error_code ec)
-    {
-        if (is_handshaked())
-        {
-            logger_->warn("[SslSession][connect][async_handshake_handler] The session is already handshaked");
-            return;
-        }
-
-        if (ec)
-        {
-            logger_->error(
-                "[SslSession][connect][async_handshake_handler] Error on handshake process. Code: {}. Message: {}",
-                ec.value(),
-                ec.message());
-
-            // disconnect in case of the bad handshake
-            disconnect(ec);
-            return;
-        }
-
-        // Update the handshaked flag
-        handshaked_ = true;
-
-        // Call event
-        on_handshaked();
-
-        // Try to receive something from the client
-        try_receive();
-    };
-
     // handshake
-    stream_socket_.async_handshake(asio::ssl::stream_base::server, async_handshake_handler);
+    stream_socket_.async_handshake(
+        asio::ssl::stream_base::server,
+        std::bind(this, &session<SocketSecurityT>::handshake_secure_handler));
 }
 
-bool session::disconnect(std::error_code error)
+template<typename SocketSecurityT>
+bool session<SocketSecurityT>::disconnect(std::error_code error)
 {
     if (!is_connected())
     {
@@ -118,7 +93,8 @@ bool session::disconnect(std::error_code error)
     return true;
 }
 
-bool session::disconnect_async(bool dispatch)
+template<typename SocketSecurityT>
+bool session<SocketSecurityT>::disconnect_async(bool dispatch)
 {
     if (!is_connected())
     {
@@ -161,7 +137,8 @@ bool session::disconnect_async(bool dispatch)
     return true;
 }
 
-void session::try_receive()
+template<typename SocketSecurityT>
+void session<SocketSecurityT>::try_receive()
 {
     if (receiving_)
     {
@@ -217,14 +194,16 @@ void session::try_receive()
         async_receive_handler);
 }
 
-std::size_t session::option_receive_buffer_size() const
+template<typename SocketSecurityT>
+std::size_t session<SocketSecurityT>::option_receive_buffer_size() const
 {
     asio::socket_base::receive_buffer_size option;
     stream_socket_.next_layer().get_option(option);
     return option.value();
 }
 
-size_t session::send(void const* buffer, size_t size)
+template<typename SocketSecurityT>
+size_t session<SocketSecurityT>::send(void const* buffer, size_t size)
 {
     if (!is_handshaked())
     {
@@ -266,8 +245,9 @@ size_t session::send(void const* buffer, size_t size)
     return sent;
 }
 
+template<typename SocketSecurityT>
 bool
-session::send_async(void const* buffer, size_t size)
+session<SocketSecurityT>::send_async(void const* buffer, size_t size)
 {
     if(!is_handshaked())
     {
@@ -317,8 +297,9 @@ session::send_async(void const* buffer, size_t size)
     return true;
 }
 
+template<typename SocketSecurityT>
 void
-session::try_send()
+session<SocketSecurityT>::try_send()
 {
     if (sending_)
     {
@@ -409,8 +390,9 @@ session::try_send()
         async_write_handler);
 }
 
+template<typename SocketSecurityT>
 void
-session::send_error(std::error_code ec)
+session<SocketSecurityT>::send_error(std::error_code ec)
 {
     // Skip asio disconnect errors
     if ((ec == asio::error::connection_aborted) ||
@@ -432,6 +414,39 @@ session::send_error(std::error_code ec)
     }
 
     on_error(ec.value(), ec.category().name(), ec.message());
+}
+
+template<typename SocketSecurityT>
+template<SocketSecurityT>
+typename std::enable_if<(std::is_same<SocketSecurityT, SecureSocket>::value)>::type
+session<SocketSecurityT>::handshake_secure_handler(asio::error_code ec)
+{
+    if (is_handshaked())
+    {
+        logger_->warn("[SslSession][connect][async_handshake_handler] The session is already handshaked");
+        return;
+    }
+
+    if (ec)
+    {
+        logger_->error(
+        "[SslSession][connect][async_handshake_handler] Error on handshake process. Code: {}. Message: {}",
+        ec.value(),
+        ec.message());
+
+        // disconnect in case of the bad handshake
+        disconnect(ec);
+        return;
+    }
+
+    // Update the handshaked flag
+    handshaked_ = true;
+
+    // Call event
+    on_handshaked();
+
+    // Try to receive something from the client
+    try_receive();
 }
 
 }
