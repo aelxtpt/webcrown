@@ -6,6 +6,7 @@
 namespace webcrown {
 namespace server {
 
+template<typename SocketSecurityT>
 class server;
 
 struct NoSecureSocket{};
@@ -17,7 +18,7 @@ template<typename SocketSecurityT>
 class session {
     // The class SslServer is responsable
     // to connect and disconnect the session
-    friend class server;
+    friend class server<SocketSecurityT>;
 
     // Session Statistic
     uint64_t bytes_pending_;

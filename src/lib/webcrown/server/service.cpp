@@ -124,7 +124,7 @@ void service::worker_thread(std::shared_ptr<asio::io_service> const& io_service)
     catch(std::exception const& ex)
     {
         logger_->error("[Service][worker_thread] Error on worker loop: {}",
-                   ex.what());
+            ex.what());
     }
     catch(...)
     {

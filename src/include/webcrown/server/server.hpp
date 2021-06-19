@@ -9,7 +9,8 @@ namespace server {
 
 /// This class is responsible to connect,
 /// disconnect and manage SSL Sessions
-class server : public std::enable_shared_from_this<server>
+template<typename SocketSecurityT>
+class server : public std::enable_shared_from_this<server<SocketSecurityT>>
 {
     std::atomic<bool> started_;
 
@@ -19,7 +20,7 @@ class server : public std::enable_shared_from_this<server>
     std::shared_ptr<spdlog::logger> logger_;
 
     // Server session
-    std::shared_ptr<session> session_;
+    std::shared_ptr<session<SocketSecurityT>> session_;
 
     // Asio Service
     std::shared_ptr<service> service_;
@@ -40,7 +41,7 @@ class server : public std::enable_shared_from_this<server>
 
     // Threading sessions
     std::shared_mutex sessions_lock_;
-    std::map<uint64_t, std::shared_ptr<session>> sessions_;
+    std::map<uint64_t, std::shared_ptr<session<SocketSecurityT>>> sessions_;
     std::atomic<uint64_t> last_generated_session_id_;
 public:
 
@@ -88,16 +89,16 @@ private:
     ///
     /// \param session_id - unique identifier for the session
     /// \param server - the connected server
-  virtual std::shared_ptr<session> create_session(
-      uint64_t session_id,
-      std::shared_ptr<server> const& server,
-      std::shared_ptr<spdlog::logger> const& logger);
+    virtual std::shared_ptr<session<SocketSecurityT>> create_session(
+        uint64_t session_id,
+        std::shared_ptr<server> const& server,
+        std::shared_ptr<spdlog::logger> const& logger);
 
-  /// Register a new session
-  ///
-  /// A session is responsible to handle
-  /// incoming requests and send response to them
-  void register_session();
+    /// Register a new session
+    ///
+    /// A session is responsible to handle
+    /// incoming requests and send response to them
+    void register_session();
 };
 
 }}

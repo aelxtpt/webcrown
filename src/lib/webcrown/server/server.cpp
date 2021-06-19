@@ -5,7 +5,8 @@
 namespace webcrown {
 namespace server {
 
-server::server(
+template<typename SocketSecurityT>
+server<SocketSecurityT>::server(
     std::shared_ptr<spdlog::logger> logger,
     std::shared_ptr<webcrown::server::service> const& service,
     uint16_t port_num,
@@ -26,7 +27,8 @@ server::server(
 {
 }
 
-bool server::start()
+template<typename SocketSecurityT>
+bool server<SocketSecurityT>::start()
 {
     logger_->info("[Server][start] Starting SSL Server");
 
@@ -102,7 +104,8 @@ bool server::start()
     return true;
 }
 
-void server::accept()
+template<typename SocketSecurityT>
+void server<SocketSecurityT>::accept()
 {
     logger_->info("[Server][accept] Initializing the server accept");
 
@@ -166,15 +169,18 @@ void server::accept()
     io_service_->dispatch(accept_handler);
 }
 
-std::shared_ptr<session> server::create_session(
+template<typename SocketSecurityT>
+std::shared_ptr<session<SocketSecurityT>>
+server<SocketSecurityT>::create_session(
     uint64_t session_id,
-    std::shared_ptr<server> const& server,
+    std::shared_ptr<server<SocketSecurityT>> const& server,
     std::shared_ptr<spdlog::logger> const& logger)
 {
     return std::make_shared<session>(session_id, server, logger, context_);
 }
 
-void server::register_session()
+template<typename SocketSecurityT>
+void server<SocketSecurityT>::register_session()
 {
     std::unique_lock<std::shared_mutex> m(sessions_lock_);
 
@@ -182,7 +188,8 @@ void server::register_session()
     sessions_.emplace(session_->session_id(), session_);
 }
 
-void server::unregister_session(uint64_t id)
+template<typename SocketSecurityT>
+void server<SocketSecurityT>::unregister_session(uint64_t id)
 {
     std::unique_lock<std::shared_mutex> m(sessions_lock_);
 
