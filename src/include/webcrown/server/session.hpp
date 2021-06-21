@@ -6,19 +6,14 @@
 namespace webcrown {
 namespace server {
 
-template<typename SocketSecurityT>
 class server;
-
-struct NoSecureSocket{};
-struct SecureSocket{};
 
 /// This class mantains a socket with the SSL Client. Responsable to read and write
 /// data with the SSL Client.
-template<typename SocketSecurityT>
 class session {
     // The class SslServer is responsable
     // to connect and disconnect the session
-    friend class server<SocketSecurityT>;
+    friend class server;
 
     // Session Statistic
     uint64_t bytes_pending_;
@@ -33,7 +28,7 @@ class session {
     std::shared_ptr <asio::io_service> io_service_;
 
     /// Session Socket
-    asio::ssl::stream <asio::ip::tcp::socket> stream_socket_;
+    asio::ip::tcp::socket socket_;
 
     /// Connected flag
     std::atomic<bool> connected_;
@@ -42,7 +37,7 @@ class session {
     /// The main purpose of an SSL handshake is to provide
     /// privacy and data integrity for communication between
     /// a server and a client
-    std::atomic<bool> handshaked_;
+    //std::atomic<bool> handshaked_;
 
     /// Receiving flag
     std::atomic<bool> receiving_;
@@ -73,8 +68,7 @@ public:
     explicit session(
         uint64_t session_id,
         std::shared_ptr <webcrown::server::server> const& server,
-        std::shared_ptr <spdlog::logger> const& logger,
-        std::shared_ptr <asio::ssl::context> const& context);
+        std::shared_ptr <spdlog::logger> const& logger);
 
     session(session const&) = delete;
     session(session&&) = delete;
@@ -105,8 +99,8 @@ public:
     { return connected_; }
 
     /// Return true if the session is handshaked
-    bool is_handshaked() const noexcept
-    { return handshaked_; }
+//    bool is_handshaked() const noexcept
+//    { return handshaked_; }
 
     /// Get the session unique identifier
     uint64_t session_id() const
@@ -115,8 +109,8 @@ public:
     /// Return the size of the receive buffer
     std::size_t option_receive_buffer_size() const;
 
-    asio::ssl::stream<asio::ip::tcp::socket>::next_layer_type& socket() noexcept
-    { return stream_socket_.next_layer(); }
+    asio::ip::tcp::socket& socket() noexcept
+    { return socket_; }
 
     /// Disconnect the session
     ///
@@ -148,9 +142,9 @@ private:
     /// Try to send pending data
     void try_send();
 
-    template<SocketSecurityT>
-    typename std::enable_if<(std::is_same<SocketSecurityT, SecureSocket>::value)>::type
-    handshake_secure_handler(asio::error_code ec);
+//    template<SocketSecurityT>
+//    typename std::enable_if<(std::is_same<SocketSecurityT, SecureSocket>::value)>::type
+//    handshake_secure_handler(asio::error_code ec);
 
     /// Event dispatched when the session is connected
     virtual void on_connected() {};

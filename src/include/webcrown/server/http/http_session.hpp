@@ -19,8 +19,7 @@ public:
   explicit http_session(
       uint64_t session_id,
       std::shared_ptr<http_server> server,
-      std::shared_ptr<spdlog::logger> const& logger,
-      std::shared_ptr<asio::ssl::context> const& context);
+      std::shared_ptr<spdlog::logger> const& logger);
 
   http_session(http_session const&) = delete;
   http_session(http_session &&) = delete;

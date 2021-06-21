@@ -5,13 +5,11 @@
 namespace webcrown {
 namespace server {
 
-template<typename SocketSecurityT>
-server<SocketSecurityT>::server(
+server::server(
     std::shared_ptr<spdlog::logger> logger,
     std::shared_ptr<webcrown::server::service> const& service,
     uint16_t port_num,
-    std::string_view address,
-    std::shared_ptr<asio::ssl::context> const& context)
+    std::string_view address)
         : started_(false)
         , socket_acceptor_(*service->asio_service())
         , io_service_(service->asio_service())
@@ -22,20 +20,19 @@ server<SocketSecurityT>::server(
         , bytes_received_(0)
         , address_(address)
         , port_number_(port_num)
-        , context_(context)
+//        , context_(context)
         , last_generated_session_id_(0)
 {
 }
 
-template<typename SocketSecurityT>
-bool server<SocketSecurityT>::start()
+bool server::start()
 {
-    logger_->info("[Server][start] Starting SSL Server");
+    logger_->info("[Server][start] Starting Server");
 
     assert(!is_started() && "Server is already started");
     if (is_started())
     {
-        logger_->error("[SslServer][start] SSL Server is already started");
+        logger_->error("[Server][start] Server is already started");
         return false;
     }
 
@@ -44,7 +41,7 @@ bool server<SocketSecurityT>::start()
     {
         if (is_started())
         {
-            logger_->error("[SslServer][start][start_handler] SSL Server is already started");
+            logger_->error("[Server][start][start_handler] Server is already started");
             return;
         }
 
@@ -53,7 +50,7 @@ bool server<SocketSecurityT>::start()
 
         if (ec.value())
         {
-            logger_->error("[SslServer][start][start_handler] Error on make ip address. Code: {}. Message: {}",
+            logger_->error("[Server][start][start_handler] Error on make ip address. Code: {}. Message: {}",
                            ec.value(),
                            ec.message());
             return;
@@ -64,7 +61,7 @@ bool server<SocketSecurityT>::start()
 
         if (ec.value())
         {
-            logger_->error("[SslServer][start][start_handler] Error on open acceptor socket. Code: {}. Message: {}",
+            logger_->error("[Server][start][start_handler] Error on open acceptor socket. Code: {}. Message: {}",
                      ec.value(),
                      ec.message());
 
@@ -76,7 +73,7 @@ bool server<SocketSecurityT>::start()
         socket_acceptor_.bind(endpoint, ec);
         if (ec.value())
         {
-            logger_->error("[SslServer][start][start_handler] Error on bind acceptor socket. Code: {}. Message: {}",
+            logger_->error("[Server][start][start_handler] Error on bind acceptor socket. Code: {}. Message: {}",
                      ec.value(),
                      ec.message());
 
@@ -104,15 +101,14 @@ bool server<SocketSecurityT>::start()
     return true;
 }
 
-template<typename SocketSecurityT>
-void server<SocketSecurityT>::accept()
+void server::accept()
 {
     logger_->info("[Server][accept] Initializing the server accept");
 
     assert(is_started() && "Server is not started");
     if (!is_started())
     {
-        logger_->error("[Server][accept] SSL Server is not started");
+        logger_->error("[Server][accept] Server is not started");
         return;
     }
 
@@ -138,7 +134,7 @@ void server<SocketSecurityT>::accept()
         {
             if (!is_started())
             {
-                logger_->error("[Server][accept][accept_handler][async_accept_handler] SSL Server is not started");
+                logger_->error("[Server][accept][accept_handler][async_accept_handler] Server is not started");
                 return;
             }
 
@@ -169,18 +165,16 @@ void server<SocketSecurityT>::accept()
     io_service_->dispatch(accept_handler);
 }
 
-template<typename SocketSecurityT>
-std::shared_ptr<session<SocketSecurityT>>
-server<SocketSecurityT>::create_session(
+std::shared_ptr<session>
+server::create_session(
     uint64_t session_id,
-    std::shared_ptr<server<SocketSecurityT>> const& server,
+    std::shared_ptr<server> const& server,
     std::shared_ptr<spdlog::logger> const& logger)
 {
-    return std::make_shared<session>(session_id, server, logger, context_);
+    return std::make_shared<session>(session_id, server, logger);
 }
 
-template<typename SocketSecurityT>
-void server<SocketSecurityT>::register_session()
+void server::register_session()
 {
     std::unique_lock<std::shared_mutex> m(sessions_lock_);
 
@@ -188,8 +182,7 @@ void server<SocketSecurityT>::register_session()
     sessions_.emplace(session_->session_id(), session_);
 }
 
-template<typename SocketSecurityT>
-void server<SocketSecurityT>::unregister_session(uint64_t id)
+void server::unregister_session(uint64_t id)
 {
     std::unique_lock<std::shared_mutex> m(sessions_lock_);
 

@@ -12,7 +12,7 @@ class http_server : public server
   /// This is an object representing SSL context. Basically
   /// this is a wrapper around the SSL_CTX data structure defined
   /// by OpenSSL library
-  std::shared_ptr<asio::ssl::context> context_;
+  //std::shared_ptr<asio::ssl::context> context_;
 
   std::deque<std::shared_ptr<middleware>> middlewares_;
 public:
@@ -20,8 +20,7 @@ public:
       std::shared_ptr<spdlog::logger> logger,
       std::shared_ptr<webcrown::server::service> const& service,
       uint16_t port_num,
-      std::string_view address,
-      std::shared_ptr<asio::ssl::context> const& context);
+      std::string_view address);
 
   http_server(http_server const&) = delete;
   http_server(http_server&&) = delete;

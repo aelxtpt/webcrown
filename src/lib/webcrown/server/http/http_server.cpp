@@ -10,10 +10,9 @@ http_server::http_server(
     std::shared_ptr<spdlog::logger> logger,
     std::shared_ptr<webcrown::server::service> const& service,
     uint16_t port_num,
-    std::string_view address,
-    std::shared_ptr<asio::ssl::context> const& context)
-  : server(logger, service, port_num, address, context)
-  , context_(context)
+    std::string_view address)
+  : server(logger, service, port_num, address)
+//  , context_(context)
 {
 }
 
@@ -25,8 +24,7 @@ http_server::create_session(uint64_t session_id,
   auto session = std::make_shared<http_session>(
         session_id,
         std::dynamic_pointer_cast<http_server>(server),
-        logger,
-        context_);
+        logger);
 
   session->middlewares(middlewares_);
 

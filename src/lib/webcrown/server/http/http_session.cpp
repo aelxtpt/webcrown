@@ -11,9 +11,8 @@ namespace http {
 http_session::http_session(
     uint64_t session_id,
     std::shared_ptr<http_server> server,
-    std::shared_ptr<spdlog::logger> const& logger,
-    std::shared_ptr<asio::ssl::context> const& context)
-  : session(session_id, server, logger, context)
+    std::shared_ptr<spdlog::logger> const& logger)
+  : session(session_id, server, logger)
   , logger_(logger)
 {
 }
