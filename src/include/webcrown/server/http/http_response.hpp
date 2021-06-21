@@ -86,6 +86,7 @@ http_response::build()
         buffer_.append(header.first);
         buffer_.append(": ");
         buffer_.append(header.second);
+        buffer_.append("\r\n");
     }
 
     // CRLF

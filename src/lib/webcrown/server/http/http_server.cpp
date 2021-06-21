@@ -34,7 +34,7 @@ http_server::create_session(uint64_t session_id,
 void
 http_server::add_middleware(std::shared_ptr<middleware> const middleware)
 {
-    middlewares_.push_front(middleware);
+    middlewares_.push_back(middleware);
 }
 
 }}}

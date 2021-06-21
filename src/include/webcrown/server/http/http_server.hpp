@@ -14,7 +14,7 @@ class http_server : public server
   /// by OpenSSL library
   //std::shared_ptr<asio::ssl::context> context_;
 
-  std::deque<std::shared_ptr<middleware>> middlewares_;
+  std::vector<std::shared_ptr<middleware>> middlewares_;
 public:
   explicit http_server(
       std::shared_ptr<spdlog::logger> logger,

@@ -35,6 +35,12 @@ void http_session::on_received(void const* buffer, std::size_t size)
     for(auto& middleware : middlewares_)
     {
         middleware->on_setup(*result, response);
+        if (middleware->should_return_now())
+        {
+            // TODO: GAMBI 2. Muito ruim, se esquecer, quebra tudo
+            middleware->should_return_now(false);
+            break;
+        }
     }
 
     // send response

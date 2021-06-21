@@ -19,13 +19,13 @@ public:
         : logger_(logger)
     {}
 
-  routing_middleware(routing_middleware const &) = delete;
-  routing_middleware(routing_middleware &&) = delete;
+    routing_middleware(routing_middleware const &) = delete;
+    routing_middleware(routing_middleware &&) = delete;
 
-  routing_middleware &operator=(routing_middleware const &) = delete;
-  routing_middleware &operator=(routing_middleware &&) = delete;
+    routing_middleware &operator=(routing_middleware const &) = delete;
+    routing_middleware &operator=(routing_middleware &&) = delete;
 
-  void on_setup(http_request const &request, http_response &response) override 
+    void on_setup(http_request const &request, http_response &response) override
   {
 	  bool route_found{false};
 
@@ -62,10 +62,20 @@ public:
 	  }
   }
 
-  void add_router(std::shared_ptr<route> const route)
+    void add_router(std::shared_ptr<route> const route)
   {
       routers_.push_back(route);
   }
+
+    bool should_return_now() override
+    {
+        return false;
+    }
+
+    void should_return_now(bool flag) override
+    {
+        //
+    }
 };
 
 } // namespace http

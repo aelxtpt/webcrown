@@ -13,7 +13,7 @@ class http_session :
 	public webcrown::server::session,
 	public std::enable_shared_from_this<http_session>
 {
-    std::deque<std::shared_ptr<middleware>> middlewares_;
+    std::vector<std::shared_ptr<middleware>> middlewares_;
     std::shared_ptr<spdlog::logger> logger_;
 public:
   explicit http_session(
@@ -29,7 +29,7 @@ public:
 
   ~http_session() = default;
 
-  void middlewares(std::deque<std::shared_ptr<middleware>> const& middlewares) noexcept
+  void middlewares(std::vector<std::shared_ptr<middleware>> const& middlewares) noexcept
   { middlewares_ = middlewares; }
 
   void on_received(void const* buffer, std::size_t size) override;

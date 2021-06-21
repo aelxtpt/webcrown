@@ -20,11 +20,10 @@ public:
     virtual ~middleware() = default;
 
     virtual void on_setup(http_request const& request, http_response& response) = 0;
-};
 
-struct cors_middleware
-{
-
+    // TODO: Gambeta temporaria, para retornar um http response antes de processar outro middleware
+    virtual bool should_return_now() = 0;
+    virtual void should_return_now(bool flag) = 0;
 };
 
 struct authentication{};
