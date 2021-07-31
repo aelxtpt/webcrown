@@ -47,7 +47,7 @@ public:
         // TODO: Apply some validations
 
         // Apply cors
-        response.add_header("Access-Control-Allow-Origin", "http://localhost:3000");
+        response.add_header("Access-Control-Allow-Origin", "*");
         response.add_header("Access-Control-Allow-Headers", "*");
 
         if (request.method() == http_method::options)

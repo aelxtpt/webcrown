@@ -63,9 +63,9 @@ public:
   }
 
     void add_router(std::shared_ptr<route> const route)
-  {
-      routers_.push_back(route);
-  }
+    {
+        routers_.push_back(route);
+    }
 
     bool should_return_now() override
     {

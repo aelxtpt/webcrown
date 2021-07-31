@@ -26,7 +26,4 @@ public:
     virtual void should_return_now(bool flag) = 0;
 };
 
-struct authentication{};
-
-
 }}}

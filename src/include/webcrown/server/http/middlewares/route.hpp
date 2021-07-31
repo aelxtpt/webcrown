@@ -9,13 +9,14 @@
 #include <utility>
 #include <vector>
 #include <functional>
+#include <memory>
 
 namespace webcrown {
 namespace server {
 namespace http {
 
 // https://tools.ietf.org/html/rfc3986
-class route 
+class route
 {
     using path_parameter_name = std::string;
     using path_parameter_value = std::string;
@@ -39,6 +40,13 @@ public:
         parse();
     }
 
+    explicit route(http_method method, std::string_view path)
+        : path_(path)
+        , method_(method)
+    {
+        parse();
+    }
+
     [[nodiscard]] std::string uri_target() const noexcept { return uri_target_; }
 
     bool is_match_with_target_request(std::string_view target);
@@ -48,6 +56,8 @@ public:
     [[nodiscard]] path_parameters_type path_parameters() const noexcept { return path_parameters_; }
 
     [[nodiscard]] route_callback callback() const { return cb_; }
+
+    void callback(route_callback cb) { cb_ = cb; }
 
 private:
     void parse();

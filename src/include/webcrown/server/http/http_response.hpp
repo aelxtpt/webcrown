@@ -2,6 +2,7 @@
 
 #include "status.hpp"
 #include <string>
+#include "common/string/string.hpp"
 
 namespace webcrown {
 namespace server {
@@ -93,7 +94,8 @@ http_response::build()
     buffer_.append("\r\n");
 
     // CRLF
-    buffer_.append("\r\n");
+    // this is wrong ?
+    //buffer_.append("\r\n");
 
     // Body
     buffer_.append(body_);
