@@ -10,31 +10,35 @@ namespace webcrown {
 namespace server {
 namespace http {
 
-// TODO: Read the official documentation and adjust implementation
-// This is my own implementation, so probably is an error prone implementation
-enum class authorization_level
+enum auth_authorization_level
 {
-    OwnerPage,
-    GuestPage
+    none,
+    guest,
+    owner
 };
 
-class authentication_middleware : public middleware
+/**
+ * Auth middleware
+ * This class is authentication and authorization
+ */
+class auth_middleware : public middleware
 {
-    using verification_callback =
-        std::function<bool(std::string const& token, std::shared_ptr<route> route, authorization_level level)>;
-
 public:
-    explicit authentication_middleware(std::shared_ptr<spdlog::logger> logger, verification_callback cb = nullptr)
-        : should_return_now_(false)
-        , logger_(logger)
-        , cb_(cb)
+    using auth_callback = std::function<bool(
+            std::string const& token,
+            std::shared_ptr<route> route,
+            auth_authorization_level level)>;
+
+    explicit auth_middleware(std::shared_ptr<spdlog::logger> logger)
+        : logger_(logger)
+        , should_return_now_(false)
     {}
 
-    authentication_middleware(authentication_middleware const &) = delete;
-    authentication_middleware(authentication_middleware &&) = delete;
+    auth_middleware(auth_middleware const&) = delete;
+    auth_middleware(auth_middleware&&) = delete;
 
-    authentication_middleware &operator=(authentication_middleware const &) = delete;
-    authentication_middleware &operator=(authentication_middleware &&) = delete;
+    auth_middleware& operator=(auth_middleware const&) = delete;
+    auth_middleware& operator=(auth_middleware&&) = delete;
 
     void on_setup(http_request const &request, http_response &response) override
     {
@@ -47,11 +51,11 @@ public:
 
         try
         {
-            for(auto const& r : accesses_)
+            for(auto const& r : routes_)
             {
                 auto&& route = r.first;
                 if(!(route->is_match_with_target_request(request.target()) &&
-                        route->method() == request.method()))
+                     route->method() == request.method()))
                 {
                     continue;
                 }
@@ -65,8 +69,6 @@ public:
                     return;
                 }
 
-                auto x1 = auth_header->first;
-                auto x2 = auth_header->second;
                 // extract the token
                 auto token = extract_token(auth_header->second);
 
@@ -77,8 +79,8 @@ public:
                     return;
                 }
 
-                // verify authorization level
-                // Unauthorized access
+                assert(cb_ != nullptr);
+                // Verify token
                 if(!cb_(token, route, r.second))
                 {
                     response.set_status(http_status::unauthorized);
@@ -90,8 +92,8 @@ public:
         }
         catch(std::exception const& ex)
         {
-            logger_->error("[authentication_middleware] Error. {}",
-                     ex.what());
+            logger_->error("[auth_middleware] Error. {}",
+                    ex.what());
 
             response.set_status(http_status::internal_server_error);
             return;
@@ -100,7 +102,7 @@ public:
 
     void authorize_route(std::shared_ptr<route>& route, authorization_level level)
     {
-        accesses_.emplace_back(std::make_pair(route, level));
+        routes_.emplace_back(std::make_pair(route, level));
     }
 
     bool should_return_now() override
@@ -113,8 +115,8 @@ public:
         should_return_now_ = flag;
     }
 
-    verification_callback callback() const { return cb_; }
-    void callback(verification_callback cb) { cb_ = cb; }
+    auth_callback callback() const { return cb_; }
+    void callback(auth_callback cb) { cb_ = cb; }
 
 private:
     std::string extract_token(std::string const& header_value)
@@ -127,14 +129,11 @@ private:
 
         return result;
     }
-
-
-
 private:
-    bool should_return_now_;
     std::shared_ptr<spdlog::logger> logger_;
-    std::vector<std::pair<std::shared_ptr<route>, authorization_level>> accesses_;
-    verification_callback cb_;
+    bool should_return_now_;
+    std::vector<std::pair<std::shared_ptr<route>, auth_authorization_level>> routes_;
+    auth_callback cb_;
 };
 
 } // namespace http
