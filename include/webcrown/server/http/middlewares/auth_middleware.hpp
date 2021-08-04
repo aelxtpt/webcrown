@@ -17,6 +17,17 @@ enum auth_authorization_level
     owner
 };
 
+struct auth_result
+{
+    explicit auth_result(bool success, std::string const& reason)
+        : success(success)
+        , reason(reason)
+    {}
+
+    bool success{false};
+    std::string reason;
+};
+
 /**
  * Auth middleware
  * This class is authentication and authorization
@@ -24,7 +35,7 @@ enum auth_authorization_level
 class auth_middleware : public middleware
 {
 public:
-    using auth_callback = std::function<bool(
+    using auth_callback = std::function<auth_result(
             std::string const& token,
             std::shared_ptr<route> route,
             auth_authorization_level level)>;
@@ -81,8 +92,14 @@ public:
 
                 assert(cb_ != nullptr);
                 // Verify token
-                if(!cb_(token, route, r.second))
+                auto result = cb_(token, route, r.second);
+                if(!result.success)
                 {
+                    std::string body_res = R"({"error": ")";
+                    body_res.append(result.reason);
+                    body_res.append(R"("})");
+
+                    response.set_body(body_res);
                     response.set_status(http_status::unauthorized);
 
                     should_return_now_ = true;
