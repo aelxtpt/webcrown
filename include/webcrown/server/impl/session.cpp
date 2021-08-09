@@ -1,7 +1,6 @@
 #include "webcrown/server/session.hpp"
 #include "webcrown/server/server.hpp"
 
-
 namespace webcrown {
 namespace server {
 

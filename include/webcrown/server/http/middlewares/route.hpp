@@ -1,11 +1,13 @@
 #pragma once
 
-#include <string>
-#include <stdexcept>
-#include <cassert>
 #include "webcrown/server/http/http_method.hpp"
 #include "webcrown/server/http/http_request.hpp"
 #include "webcrown/server/http/http_response.hpp"
+#include "webcrown/common/string/string.hpp"
+
+#include <string>
+#include <stdexcept>
+#include <cassert>
 #include <utility>
 #include <vector>
 #include <functional>
@@ -72,7 +74,7 @@ inline
 bool
 route::is_match_with_target_request(std::string_view target)
 {
-    if(!target.starts_with('/'))
+    if(!common::string_utils::starts_with(target, "/"))
     {
         // Error
         return false;
@@ -166,7 +168,7 @@ route::parse()
 {
     // E melhor deixar para o dev converter os parametros no tipo, todos os parametros vao ser string
 
-    if (!path_.starts_with('/'))
+    if (!common::string_utils::starts_with(path_, "/"))
     {
         // TODO: MOVE TO COMPILATION TIME ERROR
         throw std::runtime_error("Route not started with slash '/'");

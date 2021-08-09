@@ -1,7 +1,6 @@
 #include "webcrown/server/server.hpp"
 #include <assert.h>
 
-
 namespace webcrown {
 namespace server {
 

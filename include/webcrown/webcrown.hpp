@@ -40,7 +40,7 @@ public:
     std::shared_ptr<server::service>& service() noexcept { return service_; }
     std::shared_ptr<server::http::http_server>& server() noexcept { return server_; }
 
-    std::shared_ptr<spdlog::logger> logger() const noexcept { return logger_; }
+    [[nodiscard]] std::shared_ptr<spdlog::logger> logger() const noexcept { return logger_; }
 
     virtual void start()
     {
@@ -48,16 +48,22 @@ public:
 
         while (!service_->is_started())
         {
+#ifdef __APPLE__
+            sched_yield();
+#elif
             pthread_yield();
-      //sched_yield();
+#endif
         }
 
         server_->start();
 
         while (!server_->is_started())
         {
+#ifdef __APPLE__
+            sched_yield();
+#elif
             pthread_yield();
-        //sched_yield();
+#endif
         }
     }
 

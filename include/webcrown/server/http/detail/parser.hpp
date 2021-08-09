@@ -1,6 +1,8 @@
 #ifndef WEBCROWN_PARSER_HPP
 #define WEBCROWN_PARSER_HPP
 
+#include <assert.h>
+
 namespace webcrown {
 namespace server {
 namespace http {

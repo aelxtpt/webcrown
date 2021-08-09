@@ -30,6 +30,8 @@ enum class http_error : std::uint8_t
     bad_field,
 
     bad_field_value,
+
+    content_type_not_implemented
 };
 
 class http_error_category : public std::error_category
@@ -62,6 +64,8 @@ public:
                 return "http bad field";
             case http_error::bad_field_value:
                 return "http bad field value";
+            case http_error::content_type_not_implemented:
+                return "http content-type unsupported";
             default:
                 return "unknown webcrown_http http error";
         }

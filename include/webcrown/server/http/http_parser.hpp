@@ -5,6 +5,7 @@
 #include <system_error>
 #include <unordered_map>
 #include <cstring>
+#include <string>
 
 #include "webcrown/server/http/http_method.hpp"
 #include "enums.hpp"
@@ -92,6 +93,13 @@ public:
     /// \param ec error result
     void parse_protocol(char const*& it, char const* last, int& protocol_version, std::error_code& ec);
 
+    // TODO: We need block the high buffers on server socket layer
+    // https://stackoverflow.com/questions/49169538/curl-doesnt-send-entire-form-data-in-http-post-request
+    bool parse_media_type(char const*& it, char const* last,
+            std::unordered_map<std::string,
+            std::string> const& headers,
+            std::error_code& ec);
+
     /// Returns the http parse phase
     /// \return parsephase enum
     parse_phase parsephase() const noexcept { return parse_phase_; }
@@ -156,8 +164,31 @@ parser::parse_start_line(const char *buffer, size_t size, std::error_code& ec)
     std::unordered_map<std::string, std::string> headers;
     parse_message_header(it, last, headers, ec);
 
+    // Verify multipart
+    auto h = headers.find("ContentType");
+    if (h == headers.end())
+    {
+        ec = make_error(http_error::content_type_not_implemented);
+        return std::nullopt;
+    }
+
+    // TODO: At the moment, we will reject all unsuported content types
+    // Supported: multipart and json
+    if (h->second != "application/json" ||
+        h->second != "multipart/form-data")
+    {
+        ec = make_error(http_error::content_type_not_implemented);
+        return std::nullopt;
+    }
+
+    // Is multipart ?
+    auto media_type_parsed = parse_media_type(it, last, headers, ec);
+
     std::string_view body;
-    parse_body(it, last, body, ec);
+    if (!media_type_parsed)
+    {
+        parse_body(it, last, body, ec);
+    }
 
     http_request request(to_method(method), protocol_version, target, headers, body);
     return request;
@@ -172,6 +203,112 @@ parser::parse_body(const char*& it, const char* last, std::string_view& body, st
     // check limit of length
 
     body = make_string(first, last);
+}
+
+inline
+bool
+parser::parse_media_type(char const*& it, char const* last,
+        std::unordered_map<std::string,
+        std::string> const& headers,
+        std::error_code& ec)
+{
+    auto content_type_h = headers.find("Content-Type");
+    if (content_type_h == headers.end())
+    {
+        return false;
+    }
+
+    // TODO: We are supporting only json and multipart/form-data
+    if(!common::string_utils::starts_with(content_type_h->second, "multipart/form-data"))
+    {
+        return false;
+    }
+
+    // parses a media type value and any optional
+    // parameters, per RFC 1521. Media types are the values in
+    // Content-Type and Content-Disposition headers (RFC 2183).
+    // On success, parse_media_type returns the media type converted
+    // to lowercase and trimmed of white space
+
+    // text
+    // image
+    // audio
+    // video
+    // application
+    // multipart
+    // message
+
+    // The only header fields that have defined meaning for body parts are
+    // those the namesof which begin with "Content-"
+
+    // get boundary parameter
+    auto boundary_pos = content_type_h->second.find("boundary=");
+    if (boundary_pos == std::string::npos)
+    {
+        return false;
+    }
+
+    auto boundary_value = content_type_h->second.substr(
+                boundary_pos, content_type_h->second.size());
+
+    auto first = it;
+
+    for(; it < last; ++it)
+    {
+        // find delimiter line
+        if (*it == '-')
+            continue;
+
+        break;
+    }
+
+    auto it_last_delta = last - it;
+    if (boundary_value.length() < it_last_delta)
+    {
+        // Incomplete body
+        return false;
+    }
+
+    // Consume CRLF
+    it += 2;
+
+    first = it;
+
+    auto consume_content = [&it]() -> bool
+    {
+        // TODO: implement is token char?
+        if(*it++ != 'C')
+            return false;
+        if(*it++ != 'o')
+            return false;
+        if (*it++ != 'n')
+            return false;
+        if (*it++ != 't')
+            return false;
+        if (*it++ != 'e')
+            return false;
+        if (*it++ != 'n')
+            return false;
+        if (*it++ != 't')
+            return false;
+
+        return true;
+    };
+
+    if (!consume_content())
+        return false;
+
+    // get the content-'s
+    for(; it < last; ++it)
+    {
+        if(*it == ':')
+            break;
+    }
+
+    auto header_name = make_string(first, it++);
+
+
+    return false;
 }
 
 inline

@@ -100,7 +100,7 @@ public:
         }
     }
 
-    void authorize_route(std::shared_ptr<route>& route, authorization_level level)
+    void authorize_route(std::shared_ptr<route>& route, auth_authorization_level level)
     {
         routes_.emplace_back(std::make_pair(route, level));
     }

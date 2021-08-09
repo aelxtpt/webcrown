@@ -21,6 +21,9 @@ void http_session::on_received(void const* buffer, std::size_t size)
 {
     std::error_code ec{};
 
+    logger_->info("Buffer: {}",
+                  static_cast<const char*>(buffer));
+
     // parser
     parser p;
     auto result = p.parse_start_line(static_cast<const char*>(buffer), size, ec);

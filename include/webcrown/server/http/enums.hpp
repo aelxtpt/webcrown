@@ -1,6 +1,8 @@
 #ifndef WEBCROWN_ENUMS_HPP
 #define WEBCROWN_ENUMS_HPP
 
+#include <cstdint>
+
 namespace webcrown {
 namespace server {
 namespace http {

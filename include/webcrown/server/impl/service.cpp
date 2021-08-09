@@ -119,7 +119,13 @@ void service::worker_thread(std::shared_ptr<asio::io_service> const& io_service)
     }
     catch(asio::system_error const& ex)
     {
-        logger_->error("[Service][worker_thread] Asio Error on worker loop: {}");
+        // TODO: Trait this error with upload multipart
+        // curl -v -X POST http://localhost:8080/upload \
+        // -F "upload[]=@/Users/alex/GolandProjects/multipart/avatar_avatar.jpg" \
+        // -H "Content-Type: multipart/form-data"
+
+        logger_->error("[Service][worker_thread] Asio Error on worker loop: {}",
+                       ex.what());
     }
     catch(std::exception const& ex)
     {
