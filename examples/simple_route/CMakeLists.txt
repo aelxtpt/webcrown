@@ -5,6 +5,7 @@ project(simple_route LANGUAGES C CXX ASM)
 include_directories(../../include)
 
 set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_BUILD_TYPE Debug)
 
 # External Libs
 ## OpenSSL

@@ -15,6 +15,10 @@
 #include "webcrown/server/http/http_response.hpp"
 #include "webcrown/server/http/http_method.hpp"
 
+
+#include <stdlib.h>
+
+
 namespace webcrown {
 namespace server {
 namespace http {
@@ -23,6 +27,18 @@ static std::string_view make_string(char const* first, char const* last)
 {
     return {first, static_cast<std::size_t>(last - first)};
 }
+
+enum class content_type
+{
+    text,
+    image,
+    audio,
+    video,
+    application_json,
+    multipart_formdata,
+    message,
+    unknown
+};
 
 //
 // TODO: Se um individuo mal intencionado enviar um buffer muito grande
@@ -93,9 +109,12 @@ public:
     /// \param ec error result
     void parse_protocol(char const*& it, char const* last, int& protocol_version, std::error_code& ec);
 
+    void parse_content_type(content_type& content_type,
+                            std::unordered_map<std::string, std::string> const& headers);
+
     // TODO: We need block the high buffers on server socket layer
     // https://stackoverflow.com/questions/49169538/curl-doesnt-send-entire-form-data-in-http-post-request
-    bool parse_media_type(char const*& it, char const* last,
+    void parse_media_type(char const*& it, char const* last,
             std::unordered_map<std::string,
             std::string> const& headers,
             std::error_code& ec);
@@ -164,31 +183,31 @@ parser::parse_start_line(const char *buffer, size_t size, std::error_code& ec)
     std::unordered_map<std::string, std::string> headers;
     parse_message_header(it, last, headers, ec);
 
-    // Verify multipart
-    auto h = headers.find("ContentType");
-    if (h == headers.end())
-    {
-        ec = make_error(http_error::content_type_not_implemented);
-        return std::nullopt;
-    }
+    // Parse Content Type
+    content_type header_content_type;
+    parse_content_type(header_content_type, headers);
 
+    printf("Content-Type is: %d\n", header_content_type);
     // TODO: At the moment, we will reject all unsuported content types
     // Supported: multipart and json
-    if (h->second != "application/json" ||
-        h->second != "multipart/form-data")
+    if (header_content_type != content_type::application_json &&
+        header_content_type != content_type::multipart_formdata)
     {
         ec = make_error(http_error::content_type_not_implemented);
         return std::nullopt;
     }
 
-    // Is multipart ?
-    auto media_type_parsed = parse_media_type(it, last, headers, ec);
+    if(header_content_type == content_type::multipart_formdata)
+    {
+        // Parse body
+        parse_media_type(it, last, headers, ec);
+
+        http_request request(to_method(method), protocol_version, target, headers);
+        return request;
+    }
 
     std::string_view body;
-    if (!media_type_parsed)
-    {
-        parse_body(it, last, body, ec);
-    }
+    parse_body(it, last, body, ec);
 
     http_request request(to_method(method), protocol_version, target, headers, body);
     return request;
@@ -206,22 +225,43 @@ parser::parse_body(const char*& it, const char* last, std::string_view& body, st
 }
 
 inline
-bool
+void
+parser::parse_content_type(content_type& content_type,
+                   std::unordered_map<std::string, std::string> const& headers)
+{
+    auto content_type_h = headers.find("Content-Type");
+    if (content_type_h == headers.end())
+    {
+        content_type = content_type::unknown;
+        return;
+    }
+
+    auto tokens = common::string_utils::split(content_type_h->second, ';');
+    auto type = tokens.size() > 0 ? tokens[0] : content_type_h->second;
+
+    // TODO: form-data is a subtype
+    if (type == "multipart/form-data")
+        content_type = content_type::multipart_formdata;
+    else if(type == "application/json")
+        content_type = content_type::application_json;
+    else
+        content_type = content_type::unknown;
+}
+
+inline
+void
 parser::parse_media_type(char const*& it, char const* last,
         std::unordered_map<std::string,
         std::string> const& headers,
         std::error_code& ec)
 {
+    printf("Parsing media type\n");
+
     auto content_type_h = headers.find("Content-Type");
     if (content_type_h == headers.end())
     {
-        return false;
-    }
-
-    // TODO: We are supporting only json and multipart/form-data
-    if(!common::string_utils::starts_with(content_type_h->second, "multipart/form-data"))
-    {
-        return false;
+        printf("Content-type not found \n");
+        return;
     }
 
     // parses a media type value and any optional
@@ -245,11 +285,82 @@ parser::parse_media_type(char const*& it, char const* last,
     auto boundary_pos = content_type_h->second.find("boundary=");
     if (boundary_pos == std::string::npos)
     {
-        return false;
+        printf("Boundary not found\n");
+        return;
     }
 
     auto boundary_value = content_type_h->second.substr(
                 boundary_pos, content_type_h->second.size());
+
+    auto boundary_v_it = boundary_value.begin();
+    
+    if (*boundary_v_it++ != 'b')
+    {
+        printf("No boundary value exists\n");
+        return;
+    }
+    if (*boundary_v_it++ != 'o')
+    {
+        printf("No boundary value exists\n");
+        return;
+    }
+    if (*boundary_v_it++ != 'u')
+    {
+        printf("No boundary value exists\n");
+        return;
+    }
+    if (*boundary_v_it++ != 'n')
+    {
+        printf("No boundary value exists\n");
+        return;
+    }
+    if (*boundary_v_it++ != 'd')
+    {
+        printf("No boundary value exists\n");
+        return;
+    }
+    if (*boundary_v_it++ != 'a')
+    {
+        printf("No boundary value exists\n");
+        return;
+    }
+    if (*boundary_v_it++ != 'r')
+    {
+        printf("No boundary value exists\n");
+        return;
+    }
+    if (*boundary_v_it++ != 'y')
+    {
+        printf("No boundary value exists\n");
+        return;
+    }
+
+    for(; boundary_v_it < boundary_value.end(); ++boundary_v_it)
+    {
+        if (*boundary_v_it == '=' || *boundary_v_it == '-')
+            continue;
+        
+        break;
+    }
+
+    auto bound_value = std::string(make_string(&*boundary_v_it, &*boundary_value.end()));
+
+    printf("Boundary value is: %s\n", bound_value.c_str());
+    
+    // Consule CRLF
+    if (it + 4 > last)
+    {
+        printf("No body for multipart\n");
+        return;
+    }
+    
+    if (it[0] == '\r' &&
+        it[1] == '\n' &&
+        it[2] == '\r' &&
+        it[3] == '\n')
+    {
+        it += 4;
+    }
 
     auto first = it;
 
@@ -261,54 +372,56 @@ parser::parse_media_type(char const*& it, char const* last,
 
         break;
     }
-
-    auto it_last_delta = last - it;
-    if (boundary_value.length() < it_last_delta)
-    {
-        // Incomplete body
-        return false;
-    }
-
-    // Consume CRLF
-    it += 2;
-
+    
     first = it;
-
-    auto consume_content = [&it]() -> bool
-    {
-        // TODO: implement is token char?
-        if(*it++ != 'C')
-            return false;
-        if(*it++ != 'o')
-            return false;
-        if (*it++ != 'n')
-            return false;
-        if (*it++ != 't')
-            return false;
-        if (*it++ != 'e')
-            return false;
-        if (*it++ != 'n')
-            return false;
-        if (*it++ != 't')
-            return false;
-
-        return true;
-    };
-
-    if (!consume_content())
-        return false;
-
-    // get the content-'s
+    
     for(; it < last; ++it)
     {
-        if(*it == ':')
+        if(it[0] == '\r' &&
+           it[1] == '\n')
+        {
             break;
+        }
     }
-
-    auto header_name = make_string(first, it++);
-
-
-    return false;
+    
+    auto boundary_value_at_line = std::string(make_string(first, it));
+    
+    if (boundary_value_at_line != bound_value)
+    {
+        printf("Error on compare boundary value\n");
+        return;
+    }
+    
+    // CRLF
+    it += 2;
+    
+    // Parse headers
+    std::unordered_map<std::string, std::string> body_headers;
+    parse_message_header(it, last, body_headers, ec);
+    
+    // parse headers body
+    auto content_type_h_body = body_headers.find("Content-Type");
+    if (content_type_h_body == body_headers.end())
+    {
+        printf("No content-type on body\n");
+        return;
+    }
+    
+    auto img_type = content_type_h_body->second;
+    
+    // Consume Two CRLF
+    it += 4;
+    
+    
+    
+    auto buffer_start = &*it;
+    auto buffer_end = &*last;
+    
+    auto buffer_delta = buffer_end - buffer_start;
+    
+    auto img_buffer = std::make_shared<std::vector<std::byte>>(buffer_delta);
+    
+    std::memcpy(img_buffer.get()->data(), buffer_start, buffer_delta);
 }
 
 inline

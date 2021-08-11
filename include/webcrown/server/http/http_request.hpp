@@ -20,7 +20,7 @@ public:
         int protocol_version,
         std::string_view target,
         std::unordered_map<std::string, std::string> const& headers,
-        std::string_view body)
+        std::string_view body = std::string{})
         : method_(method)
         , protocol_version(protocol_version)
         , target_(target)
