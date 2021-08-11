@@ -370,7 +370,7 @@ parser::parse_media_type(char const*& it, char const* last,
     for(; it < last;)
     {
         auto boundary_value_length = bound_value.length();
-        auto verify_boundary_value = [&it, &last, &boundary_value_length, &bound_value]()
+        auto verify_boundary_value = [&it, &last, &boundary_value_length, &bound_value]() -> bool
         {
             // TODO: POOR
             for(; it < last; ++it)
@@ -392,11 +392,12 @@ parser::parse_media_type(char const*& it, char const* last,
                 
                 if (match_count == boundary_value_length)
                 {
-                    break;
+                    return true;
                 }
                 
                 printf("%c", *it);
             }
+            return false;
         };
         
         auto first = it;
@@ -452,21 +453,39 @@ parser::parse_media_type(char const*& it, char const* last,
         it += 4;
         
         auto buffer_start = &*it;
+        const char* buffer_end{};
         
+        first = it;
+        if(verify_boundary_value())
+        {
+            for(;it > first; --it)
+            {
+                if (*it == '-')
+                    continue;
+
+                if(it[0] == '\n' && it[-1] == '\r')
+                {
+                    // consume \r and point to the end byte of the image
+                    it -= 2;
+                    break;
+                }
+            }
+            
+            buffer_end = &*it;
+        }
+        else
+            buffer_end = &*last;
         
-        auto buffer_end = &*it - boundary_value_length;
-        
-        
-    //    auto buffer_delta = buffer_end - buffer_start;
-    //
-    //    auto img_buffer = std::make_shared<std::vector<std::byte>>(buffer_delta);
-    //
-    //    std::memcpy(img_buffer.get()->data(), buffer_start, buffer_delta);
-    //
-    //    http_form_upload item;
-    //    item.format = img_type;
-    //    item.bytes = img_buffer;
-    //    uploads.push_back(std::move(item));
+        auto buffer_delta = buffer_end - buffer_start;
+    
+        auto img_buffer = std::make_shared<std::vector<std::byte>>(buffer_delta);
+    
+        std::memcpy(img_buffer.get()->data(), buffer_start, buffer_delta);
+    
+        http_form_upload item;
+        item.format = img_type;
+        item.bytes = img_buffer;
+        uploads.push_back(std::move(item));
     }
 }
 
