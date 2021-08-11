@@ -18,8 +18,9 @@ enum class http_method : std::uint8_t
 
     post,
     get,
-    delet,
-    options
+    delete_,
+    options,
+    patch
     // TODO: add other methods
 };
 
