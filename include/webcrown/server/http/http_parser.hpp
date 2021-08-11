@@ -205,7 +205,7 @@ parser::parse_start_line(const char *buffer, size_t size, std::error_code& ec)
         // Parse body
         parse_media_type(it, last, headers, uploads, ec);
 
-        http_request request(to_method(method), protocol_version, target, headers);
+        http_request request(to_method(method), protocol_version, target, headers, uploads);
         return request;
     }
 
@@ -417,6 +417,17 @@ parser::parse_media_type(char const*& it, char const* last,
         
         for(; it < last; ++it)
         {
+            // At the end of the last boundary value has two --
+            
+            if(it[0] == '-' &&
+               it[1] == '-' &&
+               it[2] == '\r' &&
+               it[3] == '\n')
+            {
+                printf("The epilogue boundary was reached.\n");
+                return;
+            }
+            
             if(it[0] == '\r' &&
                it[1] == '\n')
             {

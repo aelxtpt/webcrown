@@ -58,7 +58,7 @@ public:
 
     std::string body() const noexcept { return body_; }
     
-    
+    std::vector<http_form_upload> uploads() const noexcept { return uploads_; }
 };
 
 }}}
