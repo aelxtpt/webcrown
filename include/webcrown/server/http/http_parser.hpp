@@ -117,6 +117,7 @@ public:
     void parse_media_type(char const*& it, char const* last,
             std::unordered_map<std::string,
             std::string> const& headers,
+            std::vector<http_form_upload>& uploads,
             std::error_code& ec);
 
     /// Returns the http parse phase
@@ -199,8 +200,10 @@ parser::parse_start_line(const char *buffer, size_t size, std::error_code& ec)
 
     if(header_content_type == content_type::multipart_formdata)
     {
+        std::vector<http_form_upload> uploads;
+        
         // Parse body
-        parse_media_type(it, last, headers, ec);
+        parse_media_type(it, last, headers, uploads, ec);
 
         http_request request(to_method(method), protocol_version, target, headers);
         return request;
@@ -253,6 +256,7 @@ void
 parser::parse_media_type(char const*& it, char const* last,
         std::unordered_map<std::string,
         std::string> const& headers,
+        std::vector<http_form_upload>& uploads,
         std::error_code& ec)
 {
     printf("Parsing media type\n");
@@ -362,66 +366,108 @@ parser::parse_media_type(char const*& it, char const* last,
         it += 4;
     }
 
-    auto first = it;
-
-    for(; it < last; ++it)
+    // Loop to get multiple files
+    for(; it < last;)
     {
-        // find delimiter line
-        if (*it == '-')
-            continue;
-
-        break;
-    }
-    
-    first = it;
-    
-    for(; it < last; ++it)
-    {
-        if(it[0] == '\r' &&
-           it[1] == '\n')
+        auto boundary_value_length = bound_value.length();
+        auto verify_boundary_value = [&it, &last, &boundary_value_length, &bound_value]()
         {
+            // TODO: POOR
+            for(; it < last; ++it)
+            {
+                auto match_count = 0;
+                for(auto c = 0; c < boundary_value_length; ++c)
+                {
+                    if (it[c] != bound_value[c])
+                    {
+                        match_count = 0;
+                        continue;
+                    }
+                    
+                    if (*it == '-')
+                        continue;
+                    
+                    match_count++;
+                }
+                
+                if (match_count == boundary_value_length)
+                {
+                    break;
+                }
+                
+                printf("%c", *it);
+            }
+        };
+        
+        auto first = it;
+
+        for(; it < last; ++it)
+        {
+            // find delimiter line
+            if (*it == '-')
+                continue;
+
             break;
         }
+        
+        verify_boundary_value();
+        
+        first = it;
+        
+        for(; it < last; ++it)
+        {
+            if(it[0] == '\r' &&
+               it[1] == '\n')
+            {
+                break;
+            }
+        }
+        
+        auto boundary_value_at_line = std::string(make_string(first, it));
+        
+        if (boundary_value_at_line != bound_value)
+        {
+            printf("Error on compare boundary value\n");
+            return;
+        }
+        
+        // CRLF
+        it += 2;
+        
+        // Parse headers
+        std::unordered_map<std::string, std::string> body_headers;
+        parse_message_header(it, last, body_headers, ec);
+        
+        // parse headers body
+        auto content_type_h_body = body_headers.find("Content-Type");
+        if (content_type_h_body == body_headers.end())
+        {
+            printf("No content-type on body\n");
+            return;
+        }
+        
+        auto img_type = content_type_h_body->second;
+        
+        // Consume Two CRLF
+        it += 4;
+        
+        auto buffer_start = &*it;
+        
+        
+        auto buffer_end = &*it - boundary_value_length;
+        
+        
+    //    auto buffer_delta = buffer_end - buffer_start;
+    //
+    //    auto img_buffer = std::make_shared<std::vector<std::byte>>(buffer_delta);
+    //
+    //    std::memcpy(img_buffer.get()->data(), buffer_start, buffer_delta);
+    //
+    //    http_form_upload item;
+    //    item.format = img_type;
+    //    item.bytes = img_buffer;
+    //    uploads.push_back(std::move(item));
     }
-    
-    auto boundary_value_at_line = std::string(make_string(first, it));
-    
-    if (boundary_value_at_line != bound_value)
-    {
-        printf("Error on compare boundary value\n");
-        return;
-    }
-    
-    // CRLF
-    it += 2;
-    
-    // Parse headers
-    std::unordered_map<std::string, std::string> body_headers;
-    parse_message_header(it, last, body_headers, ec);
-    
-    // parse headers body
-    auto content_type_h_body = body_headers.find("Content-Type");
-    if (content_type_h_body == body_headers.end())
-    {
-        printf("No content-type on body\n");
-        return;
-    }
-    
-    auto img_type = content_type_h_body->second;
-    
-    // Consume Two CRLF
-    it += 4;
-    
-    
-    
-    auto buffer_start = &*it;
-    auto buffer_end = &*last;
-    
-    auto buffer_delta = buffer_end - buffer_start;
-    
-    auto img_buffer = std::make_shared<std::vector<std::byte>>(buffer_delta);
-    
-    std::memcpy(img_buffer.get()->data(), buffer_start, buffer_delta);
 }
 
 inline
