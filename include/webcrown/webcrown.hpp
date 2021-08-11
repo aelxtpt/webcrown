@@ -50,7 +50,7 @@ public:
         {
 #ifdef __APPLE__
             sched_yield();
-#elif
+#else
             pthread_yield();
 #endif
         }
@@ -61,7 +61,7 @@ public:
         {
 #ifdef __APPLE__
             sched_yield();
-#elif
+#else
             pthread_yield();
 #endif
         }
