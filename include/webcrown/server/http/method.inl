@@ -23,7 +23,7 @@ to_method(std::string_view m)
     else if(m == "POST")
         return http_method::post;
     else if(m == "DELETE")
-        return http_method::delet;
+        return http_method::delete_;
     else if(m == "OPTIONS")
         return http_method::options;
     else
