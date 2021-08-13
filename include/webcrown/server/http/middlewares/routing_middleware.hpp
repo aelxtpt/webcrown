@@ -32,6 +32,8 @@ public:
 	  // find route
 	  for (auto const &r : routers_)
 	  {
+	      logger_->info("[routing_middleware] Matching target any route with {}", request.target());
+
 		  if (r->is_match_with_target_request(request.target()) && r->method() == request.method())
 		  {
 		      auto&& cb = r->callback();
@@ -58,6 +60,7 @@ public:
 	  // return http response 404
 	  if (!route_found)
 	  {
+	      logger_->error("[routing_middleware] router not found!");
 	      response.set_status(http_status::not_found);
 	  }
   }

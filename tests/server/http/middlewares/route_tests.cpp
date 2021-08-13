@@ -237,6 +237,7 @@ TEST(ROUTE_TESTS, parse_single_parameter_in_middle_route_should_return_expected_
     // Scenario
     route rt(http_method::get, "/user/profile/:username/cover_image/edit", [](http_request const &request, http_response &response){});
     auto result = rt.path_parameters();
+    //auto route_match = rt.is_match_with_target_request()
 
     // Assert
     ASSERT_TRUE(result.size() == 1);
