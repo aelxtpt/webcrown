@@ -32,10 +32,13 @@ public:
 	  // find route
 	  for (auto const &r : routers_)
 	  {
-	      logger_->info("[routing_middleware] Matching target any route with {}", request.target());
+	      logger_->info("[routing_middleware] Matching any route with {}", request.target());
 
 		  if (r->is_match_with_target_request(request.target()) && r->method() == request.method())
 		  {
+		      logger_->info("[routing_middleware] route {} match!", r->uri_target());
+
+		      logger_->info("[routing_middleware] calling route callback");
 		      auto&& cb = r->callback();
 
 		      try
