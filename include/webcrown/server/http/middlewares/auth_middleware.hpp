@@ -76,8 +76,12 @@ public:
                 auto auth_header = headers.find("Authorization");
                 if (auth_header == headers.end())
                 {
-                    forbidden_error();
-                    return;
+                    auth_header = headers.find("authorization");
+                    if (auth_header == headers.end())
+                    {
+                        forbidden_error();
+                        return;
+                    }
                 }
 
                 // extract the token
