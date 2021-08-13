@@ -37,7 +37,8 @@ enum class content_type
     application_json,
     multipart_formdata,
     message,
-    unknown
+    unknown,
+    not_specified
 };
 
 //
@@ -192,7 +193,8 @@ parser::parse_start_line(const char *buffer, size_t size, std::error_code& ec)
     // TODO: At the moment, we will reject all unsuported content types
     // Supported: multipart and json
     if (header_content_type != content_type::application_json &&
-        header_content_type != content_type::multipart_formdata)
+        header_content_type != content_type::multipart_formdata &&
+        header_content_type != content_type::not_specified)
     {
         ec = make_error(http_error::content_type_not_implemented);
         return std::nullopt;
@@ -235,7 +237,7 @@ parser::parse_content_type(content_type& content_type,
     auto content_type_h = headers.find("Content-Type");
     if (content_type_h == headers.end())
     {
-        content_type = content_type::unknown;
+        content_type = content_type::not_specified;
         return;
     }
 

@@ -248,6 +248,17 @@ route::extract_next_bind_key(std::string::const_iterator& it, std::string::const
         return result;
     }
 
+    // if is not any option above, so is simple an /:bindvalue/something
+    it = begin;
+    for(; it < last; ++it)
+    {
+        if (*it == '/')
+        {
+            result = std::string(begin, it);
+            return result;
+        }
+    }
+
     // Ok, no has a next key
     result = std::string(begin, last);
 
