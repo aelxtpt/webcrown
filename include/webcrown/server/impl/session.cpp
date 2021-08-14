@@ -31,6 +31,9 @@ void session::connect()
     bytes_received_ = 0;
     bytes_sent_ = 0;
 
+    // test
+    socket_.set_option(asio::ip::tcp::socket::keep_alive(true));
+
     receive_buffer_.resize(option_receive_buffer_size());
 
     // Update the connected flag
@@ -143,6 +146,9 @@ void session::try_receive()
         return;
     }
 
+    if(!is_connected())
+        return;
+
 //    if (!is_handshaked())
 //    {
 //        logger_->warn("[SslSession][try_receive] Session is not handshaked, but you should not to worry, because this is probably the second read");
@@ -151,7 +157,8 @@ void session::try_receive()
 
     receiving_ = true;
 
-    auto async_receive_handler = [this](asio::error_code const& ec, std::size_t bytes_size)
+    auto self(this->shared_from_this());
+    auto async_receive_handler = [this, self](asio::error_code const& ec, std::size_t bytes_size)
     {
         receiving_ = false;
 
@@ -185,6 +192,8 @@ void session::try_receive()
         else
             disconnect(ec);
     };
+
+    logger_->info("***** Receive buffer initial size: {}", receive_buffer_.size());
 
     socket_.async_read_some(
         asio::buffer(receive_buffer_.data(), receive_buffer_.size()),
