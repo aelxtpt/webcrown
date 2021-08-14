@@ -16,7 +16,7 @@ int main()
 {
     webcrown::webcrown_http http("127.0.0.1", 8115);
 
-    //  curl -v -X POST http://localhost:8090/upload \
+    //  curl -v -X POST http://localhost:8080/upload \
     -F "upload[]=@/Users/alex/GolandProjects/multipart/avatar_avatar.jpg" \
     -H "Content-Type: multipart/form-data" \
     -H 'Expect:'

@@ -195,6 +195,10 @@ std::size_t session::option_receive_buffer_size() const
 {
     asio::socket_base::receive_buffer_size option;
     socket_.get_option(option);
+
+    logger_->info("[option_receive_buffer_size] buffer size: {} ",
+            option.value());
+
     return option.value();
 }
 
