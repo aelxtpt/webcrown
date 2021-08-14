@@ -157,8 +157,7 @@ void session::try_receive()
 
     receiving_ = true;
 
-    auto self(this->shared_from_this());
-    auto async_receive_handler = [this, self](asio::error_code const& ec, std::size_t bytes_size)
+    auto async_receive_handler = [this](asio::error_code const& ec, std::size_t bytes_size)
     {
         receiving_ = false;
 

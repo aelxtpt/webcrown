@@ -10,7 +10,7 @@ class server;
 
 /// This class mantains a socket with the SSL Client. Responsable to read and write
 /// data with the SSL Client.
-class session : public std::enable_shared_from_this<session>
+class session
 {
     // The class SslServer is responsable
     // to connect and disconnect the session
