@@ -140,14 +140,11 @@ bool session::disconnect_async(bool dispatch)
 
 void session::try_receive()
 {
-    if (receiving_)
-    {
-        logger_->warn("[SslSession][try_receive] Session is already in process of receiving...");
-        return;
-    }
-
-    if(!is_connected())
-        return;
+//    if (receiving_)
+//    {
+//        logger_->warn("[SslSession][try_receive] Session is already in process of receiving...");
+//        return;
+//    }
 
 //    if (!is_handshaked())
 //    {
