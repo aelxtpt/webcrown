@@ -1,18 +1,17 @@
 #pragma once
 
 #include "webcrown/server/service.hpp"
-#include <asio/ssl/stream.hpp>
 
 namespace webcrown {
 namespace server {
 
 class server;
 
-/// This class mantains a socket with the SSL Client. Responsable to read and write
-/// data with the SSL Client.
+/// This class mantains a socket with the Client. Responsable to read and write
+/// data with the Client.
 class session
 {
-    // The class SslServer is responsable
+    // The class Server is responsable
     // to connect and disconnect the session
     friend class server;
 
@@ -34,12 +33,6 @@ class session
     /// Connected flag
     std::atomic<bool> connected_;
 
-    /// Handshake flag
-    /// The main purpose of an SSL handshake is to provide
-    /// privacy and data integrity for communication between
-    /// a server and a client
-    //std::atomic<bool> handshaked_;
-
     /// Receiving flag
     std::atomic<bool> receiving_;
 
@@ -47,7 +40,7 @@ class session
     uint64_t session_id_;
 
     // Receive Buffer
-    std::vector <uint8_t> receive_buffer_;
+    std::vector<uint8_t> receive_buffer_;
 
     // Logger
     std::shared_ptr <spdlog::logger> logger_;
@@ -99,10 +92,6 @@ public:
     bool is_connected() const noexcept
     { return connected_; }
 
-    /// Return true if the session is handshaked
-//    bool is_handshaked() const noexcept
-//    { return handshaked_; }
-
     /// Get the session unique identifier
     uint64_t session_id() const
     noexcept { return session_id_; }
@@ -137,6 +126,8 @@ public:
     virtual bool send_async(std::string_view text) { return send_async(text.data(), text.size()); }
     
 private:
+    void clear_buffers();
+    
     /// Try to receive new data
     void try_receive();
 

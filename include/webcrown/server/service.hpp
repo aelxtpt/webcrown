@@ -1,7 +1,6 @@
 #pragma once
 
 #include <asio.hpp>
-#include <asio/ssl.hpp>
 #include <memory>
 #include <vector>
 #include <spdlog/spdlog.h>

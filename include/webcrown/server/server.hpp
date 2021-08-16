@@ -8,7 +8,7 @@ namespace webcrown {
 namespace server {
 
 /// This class is responsible to connect,
-/// disconnect and manage SSL Sessions
+/// disconnect and manage Sessions
 class server : public std::enable_shared_from_this<server>
 {
     std::atomic<bool> started_;
@@ -17,9 +17,6 @@ class server : public std::enable_shared_from_this<server>
     std::shared_ptr<asio::io_service> io_service_;
 
     std::shared_ptr<spdlog::logger> logger_;
-
-    // Server session
-    std::shared_ptr<session> session_;
 
     // Asio Service
     std::shared_ptr<service> service_;
@@ -33,18 +30,13 @@ class server : public std::enable_shared_from_this<server>
     std::string address_;
     uint16_t port_number_;
 
-    /// This is an object representing SSL context. Basically
-    /// this is a wrapper around the SSL_CTX data structure defined
-    /// by OpenSSL library
-    //std::shared_ptr<asio::ssl::context> context_;
-
     // Threading sessions
     std::shared_mutex sessions_lock_;
     std::map<uint64_t, std::shared_ptr<session>> sessions_;
     std::atomic<uint64_t> last_generated_session_id_;
 public:
 
-    /// Initialize SSL server with a given Asio service, SSL Context and port number and address
+    /// Initialize  server with a given Asio service, port number and address
     ///
     /// \param service - Asio service
     /// \param port_num - Port number
@@ -96,7 +88,7 @@ private:
     ///
     /// A session is responsible to handle
     /// incoming requests and send response to them
-    void register_session();
+    void register_session(std::shared_ptr<session> s);
 };
 
 }}
