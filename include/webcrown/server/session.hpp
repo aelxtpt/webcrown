@@ -1,7 +1,6 @@
 #pragma once
 
 #include "webcrown/server/service.hpp"
-#include <asio/ssl/stream.hpp>
 
 namespace webcrown {
 namespace server {
@@ -10,7 +9,7 @@ class server;
 
 /// This class mantains a socket with the Client. Responsable to read and write
 /// data with the Client.
-class session : public std::enable_shared_from_this<session>
+class session
 {
     // The class Server is responsable
     // to connect and disconnect the session
@@ -34,12 +33,6 @@ class session : public std::enable_shared_from_this<session>
     /// Connected flag
     std::atomic<bool> connected_;
 
-    /// Handshake flag
-    /// The main purpose of an SSL handshake is to provide
-    /// privacy and data integrity for communication between
-    /// a server and a client
-    //std::atomic<bool> handshaked_;
-
     /// Receiving flag
     std::atomic<bool> receiving_;
 
@@ -47,7 +40,7 @@ class session : public std::enable_shared_from_this<session>
     uint64_t session_id_;
 
     // Receive Buffer
-    std::vector <uint8_t> receive_buffer_;
+    std::vector<uint8_t> receive_buffer_;
 
     // Logger
     std::shared_ptr <spdlog::logger> logger_;
@@ -98,10 +91,6 @@ public:
     /// Return true if the session is connected
     bool is_connected() const noexcept
     { return connected_; }
-
-    /// Return true if the session is handshaked
-//    bool is_handshaked() const noexcept
-//    { return handshaked_; }
 
     /// Get the session unique identifier
     uint64_t session_id() const

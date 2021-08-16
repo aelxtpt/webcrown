@@ -88,7 +88,7 @@ private:
     ///
     /// A session is responsible to handle
     /// incoming requests and send response to them
-    void register_session();
+    void register_session(std::shared_ptr<session> s);
 };
 
 }}

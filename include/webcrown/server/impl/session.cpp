@@ -16,7 +16,6 @@ session::session(
     , io_service_(server_->service1()->asio_service())
     , socket_(*io_service_)
     , connected_(false)
-//    , handshaked_(false)
     , receiving_(false)
     , session_id_(session_id)
     , logger_(logger)
@@ -81,8 +80,7 @@ bool session::disconnect(std::error_code error)
                        error.message());
     }
     
-    auto self(this->shared_from_this());
-    auto disconnect_handler = [this, error, self]()
+    auto disconnect_handler = [this, error]()
     {
         if (!is_connected())
         {
@@ -105,7 +103,7 @@ bool session::disconnect(std::error_code error)
         on_disconnected(error);
         
         // dispatch unregister session
-        auto unregister_session_handler = [this, self]()
+        auto unregister_session_handler = [this]()
         {
             server_->unregister_session(session_id());
         };
@@ -178,8 +176,7 @@ void session::try_receive()
     
     receiving_ = true;
 
-    auto self(this->share_from_this);
-    auto async_receive_handler = [this, self](asio::error_code const& ec, std::size_t bytes_size)
+    auto async_receive_handler = [this](asio::error_code const& ec, std::size_t bytes_size)
     {
         receiving_ = false;
 
@@ -207,8 +204,6 @@ void session::try_receive()
         else
             disconnect(ec);
     };
-
-    logger_->info("***** Receive buffer initial size: {}", receive_buffer_.size());
 
     socket_.async_read_some(
         asio::buffer(receive_buffer_.data(), receive_buffer_.size()),
@@ -421,17 +416,6 @@ session::send_error(std::error_code ec)
         (ec == asio::error::eof) ||
         (ec == asio::error::operation_aborted))
         return;
-
-    // Skip OpenSSL annoying errors
-    if (ec == asio::ssl::error::stream_truncated)
-        return;
-    if (ec.category() == asio::error::get_ssl_category())
-    {
-        if ((ERR_GET_REASON(ec.value()) == SSL_R_DECRYPTION_FAILED_OR_BAD_RECORD_MAC) ||
-            (ERR_GET_REASON(ec.value()) == SSL_R_PROTOCOL_IS_SHUTDOWN) ||
-            (ERR_GET_REASON(ec.value()) == SSL_R_WRONG_VERSION_NUMBER))
-            return;
-    }
 
     on_error(ec.value(), ec.category().name(), ec.message());
 }
