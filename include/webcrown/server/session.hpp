@@ -8,11 +8,11 @@ namespace server {
 
 class server;
 
-/// This class mantains a socket with the SSL Client. Responsable to read and write
-/// data with the SSL Client.
-class session
+/// This class mantains a socket with the Client. Responsable to read and write
+/// data with the Client.
+class session : public std::enable_shared_from_this<session>
 {
-    // The class SslServer is responsable
+    // The class Server is responsable
     // to connect and disconnect the session
     friend class server;
 
@@ -137,6 +137,8 @@ public:
     virtual bool send_async(std::string_view text) { return send_async(text.data(), text.size()); }
     
 private:
+    void clear_buffers();
+    
     /// Try to receive new data
     void try_receive();
 

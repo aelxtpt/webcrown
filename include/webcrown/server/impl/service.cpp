@@ -24,7 +24,7 @@ void service::start()
     assert(!is_started() && "Service is already started");
     if (is_started())
     {
-        logger_->warn("[Service][start][start_handler] Service is already started");
+        logger_->error("[service][start][start_handler] Service is already started");
         return;
     }
 
@@ -35,11 +35,11 @@ void service::start()
     {
         if (is_started())
         {
-            logger_->warn("[Service][start][start_handler] Service is already started");
+            logger_->error("[service][start][start_handler] Service is already started");
             return;
         }
 
-        logger_->info("[Service][start][start_handler] Service start job was initiated");
+        logger_->info("[service][start][start_handler] Service start job was initiated");
         starded_ = true;
     };
 
@@ -64,7 +64,7 @@ void service::stop()
     assert(is_started() && "Service is not started");
     if (!is_started())
     {
-        logger_->warn("[Service][stop] Service is not started");
+        logger_->warn("[service][stop] Service is not started");
         return;
     }
 
@@ -72,7 +72,7 @@ void service::stop()
     {
         if (!is_started())
         {
-            logger_->warn("[Service][stop][stop_handler] Service is not started");
+            logger_->warn("[service][stop][stop_handler] Service is not started");
             return;
         }
 
@@ -89,7 +89,7 @@ void service::stop()
     // Wait for all services working threads
     for (auto& thread : threads_)
     {
-        logger_->info("[Service][stop] Waiting for worker thread...");
+        logger_->info("[service][stop] Waiting for worker thread...");
         thread.join();
     }
 }
@@ -124,17 +124,17 @@ void service::worker_thread(std::shared_ptr<asio::io_service> const& io_service)
         // -F "upload[]=@/Users/alex/GolandProjects/multipart/avatar_avatar.jpg" \
         // -H "Content-Type: multipart/form-data"
 
-        logger_->error("[Service][worker_thread] Asio Error on worker loop: {}",
+        logger_->error("[service][worker_thread] Asio Error on worker loop: {}",
                        ex.what());
     }
     catch(std::exception const& ex)
     {
-        logger_->error("[Service][worker_thread] Error on worker loop: {}",
+        logger_->error("[service][worker_thread] Error on worker loop: {}",
             ex.what());
     }
     catch(...)
     {
-        logger_->critical("[Service][worker_thread] Asio worker loop thread terminated!");
+        logger_->critical("[service][worker_thread] Asio worker loop thread terminated!");
     }
 
   // TODO: call the cleanup thread handler

@@ -51,45 +51,69 @@ void session::connect()
 //        std::bind(this, &session<SocketSecurityT>::handshake_secure_handler));
 }
 
+void
+session::clear_buffers()
+{
+    {
+        std::scoped_lock locker(send_lock_);
+
+        // Clear send buffers
+        send_buffer_main_.clear();
+        send_buffer_flush_.clear();
+
+        // Update statistic
+        bytes_pending_ = 0;
+        bytes_sending_ = 0;
+    }
+}
+
 bool session::disconnect(std::error_code error)
 {
     if (!is_connected())
     {
-        logger_->error("[SslSession][disconnect] The server is not started");
+        logger_->error("[session][disconnect] The server is not started");
         return false;
     }
 
     if (error)
     {
-        logger_->error("[SslSession][disconnect] The server will be disconnect with reason: {}",
+        logger_->error("[session][disconnect] The server will be disconnect with reason: {}",
                        error.message());
     }
-
-    // Close socket
-    asio::error_code ec;
-    socket().close(ec);
-
-    if (ec.value())
+    
+    auto self(this->shared_from_this());
+    auto disconnect_handler = [this, error, self]()
     {
-        logger_->error("[SslSession][disconnect] Error on close socket. Code: {}. Message: {}",
-                       ec.value(),
-                       ec.message());
-
-        return false;
-    }
-
-    // Update flags
-    //handshaked_ = false;
-    connected_ = false;
-
-    on_disconnected(error);
-
-    auto unregister_session_handler = [this]()
-    {
-        server_->unregister_session(session_id_);
+        if (!is_connected())
+        {
+            logger_->error("[session][disconnect][disconnect_handler] The server is not started");
+            return;
+        }
+        
+        socket_.close();
+        
+        // Update the connected flag
+        connected_ = false;
+        
+        // Update sending/receive flag
+        receiving_ = false;
+        sending_ = false;
+        
+        // clear buffers
+        clear_buffers();
+        
+        on_disconnected(error);
+        
+        // dispatch unregister session
+        auto unregister_session_handler = [this, self]()
+        {
+            server_->unregister_session(session_id());
+        };
+        
+        server_->service1()->dispatch(unregister_session_handler);
     };
-
-    server_->service1()->dispatch(unregister_session_handler);
+    
+    
 
     return true;
 }
@@ -142,34 +166,26 @@ void session::try_receive()
 {
     if (receiving_)
     {
-        logger_->warn("[SslSession][try_receive] Session is already in process of receiving...");
+        logger_->warn("[session][try_receive] Session is already in process of receiving...");
         return;
     }
 
     if(!is_connected())
+    {
+        logger_->info("[session][try_receive] session is not connected...");
         return;
-
-//    if (!is_handshaked())
-//    {
-//        logger_->warn("[SslSession][try_receive] Session is not handshaked, but you should not to worry, because this is probably the second read");
-//        return;
-//    }
-
+    }
+    
     receiving_ = true;
 
-    auto async_receive_handler = [this](asio::error_code const& ec, std::size_t bytes_size)
+    auto self(this->share_from_this);
+    auto async_receive_handler = [this, self](asio::error_code const& ec, std::size_t bytes_size)
     {
         receiving_ = false;
 
-        logger_->info("[Session][try_receive][async_receive_handler] receiving message {} bytes",
+        logger_->info("[session][try_receive][async_receive_handler] receiving message {} bytes",
                       bytes_size);
-
-//        if (!is_handshaked())
-//        {
-//            logger_->error("[SslSession][try_receive][async_receive_handler] Session is not handshaked");
-//            return;
-//        }
-
+        
         // Received some data from the client
         if (bytes_size > 0)
         {
