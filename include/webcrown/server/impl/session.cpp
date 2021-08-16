@@ -41,13 +41,8 @@ void session::connect()
     // Call event
     on_connected();
 
-    // The SSL need handshake
-    // But for simple TCP, we only need read
+    // Start receive data
     try_receive();
-    // handshake
-//    stream_socket_.async_handshake(
-//        asio::ssl::stream_base::server,
-//        std::bind(this, &session<SocketSecurityT>::handshake_secure_handler));
 }
 
 void
