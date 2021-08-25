@@ -31,7 +31,9 @@ enum class http_error : std::uint8_t
 
     bad_field_value,
 
-    content_type_not_implemented
+    content_type_not_implemented,
+
+    need_more
 };
 
 class http_error_category : public std::error_category

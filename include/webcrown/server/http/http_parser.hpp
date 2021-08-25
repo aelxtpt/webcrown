@@ -70,6 +70,8 @@ public:
     // de uma lib de reflection, a minha, especionar memoria ?
     // para testar os metodos privados
 
+    void parse(const char* buffer, size_t size, std::error_code& ec);
+
     /// startline is the first line of the http request buffer.
     /// The basic buffer of the request http is:
     ///     generic-message = start-line
@@ -77,10 +79,7 @@ public:
     //                          CRLF
     //                          [ message-body ]
     //      start-line      = Request-Line | Status-Line  (Status-line is for the response http message)
-    /// \param buffer
-    /// \param size
-    /// \param ec
-    std::optional<http_request> parse_start_line(const char* buffer, size_t size, std::error_code& ec);
+    void parse_start_line(char const*& it, char const* last, std::error_code& ec);
 
     void parse_message_header(char const*& it, char const* last, std::unordered_map<std::string, std::string>& headers, std::error_code& ec);
 
@@ -128,24 +127,44 @@ public:
 };
 
 inline
-std::optional<http_request>
-parser::parse_start_line(const char *buffer, size_t size, std::error_code& ec)
+void
+parser::parse(const char* buffer, size_t size, std::error_code& ec)
 {
-    parse_phase_ = parse_phase::started;
-
     // Current position of the buffer in the parser
     char const*& it = buffer;
 
     // last character in the buffer
     char const* last = buffer + size;
 
+    switch(parse_phase_)
+    {
+        case parse_phase::not_started:
+        {
+            if (size == 0)
+            {
+                ec = make_error(http_error::need_more);
+                return;
+            }
+            parse_phase_ = parse_phase::parse_start_line;
+            break;
+        }
+        case parse_phase::parse_start_line:
+        {
+
+        }
+    }
+}
+
+inline
+void
+parser::parse_start_line(char const*& it, char const* last, std::error_code& ec)
+{
+    parse_phase_ = parse_phase::started;
+
+
+
     // request-line   = get_method SP request-target SP HTTP-version CRLF
 
-    // Primeira coisa é procurar o methodo
-    // Porque imagina, iterar todo o buffer pra achar o CRLF
-    // vai que o buffer não tem o CRLR
-    // Sendo que a primeira coisa que vem é o metodo seguido por um espaco
-    // perdemos menos tempo
     std::string_view method;
     parse_method(it, last, method, ec);
     if (ec)
