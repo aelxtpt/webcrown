@@ -108,7 +108,7 @@ public:
 
     void parse_message_header_value(const char*& it, char const* last, std::string_view& header_value, std::error_code& ec);
 
-    void parse_body(const char*& it, char const* last, std::string_view& body, std::error_code& ec);
+    std::optional<http_request> parse_body(const char*& it, char const* last, std::string_view& body, std::error_code& ec);
 
     /// Extract the HTTP get_method in the buffer
     /// \param it pointer to the first position on the buffer
@@ -157,56 +157,50 @@ parser::parse(const char* buffer, size_t size, std::error_code& ec)
     // last character in the buffer
     char const* last = buffer + size;
 
-    for(;it < last;)
-    {
-        if (ec)
-            break;
-
-        // We assume that the initial buffer always has the complete http start line
-        switch(parse_phase_)
+    // We assume that the initial buffer always has the complete http start line
+   if(parse_phase_ == parse_phase::not_started)
+   {
+        if (size == 0)
         {
-            case parse_phase::not_started:
-            {
-                if (size == 0)
-                {
-                    ec = make_error(http_error::need_more);
-                    return std::nullopt;
-                }
-                parse_phase_ = parse_phase::parse_start_line;
-                parse_start_line(it, last, ec);
-                break;
-            }
-            case parse_phase::parse_content_type_finished:
-            {
-                if (header_content_type_ == content_type::text ||
-                        header_content_type_ == content_type::application_json)
-                {
-                    std::string_view body;
-                    parse_body(it, last, body, ec);
-                }
-                else if(header_content_type_ == content_type::image ||
-                        header_content_type_ == content_type::image_jpeg ||
-                        header_content_type_ == content_type::multipart_formdata)
-                {
-                    parse_media_type(it, last, headers_, uploads_, ec);
-                }
-                break;
-            }
-            case parse_phase::parse_media_type_need_more:
-            {
-                parse_media_type(it, last, headers_, uploads_, ec);
-                break;
-            }
-
+            ec = make_error(http_error::need_more);
+            return std::nullopt;
         }
+        parse_phase_ = parse_phase::parse_start_line;
+        parse_start_line(it, last, ec);
+   }
 
-        if (parse_phase_ == parse_phase::parse_media_type_finished)
+   if(parse_phase_ == parse_phase::parse_content_type_finished)
+   {
+        if (header_content_type_ == content_type::text ||
+                header_content_type_ == content_type::application_json ||
+                header_content_type_ == content_type::not_specified)
         {
+            std::string_view body;
+            auto res = parse_body(it, last, body, ec);
             parse_phase_ = parse_phase::finished;
-            http_request request(to_method(method_), protocol_version_, target_, headers_, uploads_);
-            return request;
+
+            return res;
+        }
+        else if(header_content_type_ == content_type::image ||
+                header_content_type_ == content_type::image_jpeg ||
+                header_content_type_ == content_type::multipart_formdata)
+        {
+            parse_media_type(it, last, headers_, uploads_, ec);
         }
     }
+
+    if(parse_phase_ == parse_phase::parse_media_type_need_more)
+    {
+        parse_media_type(it, last, headers_, uploads_, ec);
+    }
+
+    if (parse_phase_ == parse_phase::parse_media_type_finished)
+    {
+        parse_phase_ = parse_phase::finished;
+        http_request request(to_method(method_), protocol_version_, target_, headers_, uploads_);
+        return request;
+    }
+
 
     return std::nullopt;
 }
@@ -293,7 +287,7 @@ parser::parse_start_line(char const*& it, char const* last, std::error_code& ec)
 }
 
 inline
-void
+std::optional<http_request>
 parser::parse_body(const char*& it, const char* last, std::string_view& body, std::error_code& ec)
 {
     auto first = it;
@@ -301,6 +295,9 @@ parser::parse_body(const char*& it, const char* last, std::string_view& body, st
     // check limit of length
 
     body = make_string(first, last);
+
+    http_request request(to_method(method_), protocol_version_, target_, headers_, body);
+    return request;
 }
 
 inline
@@ -314,6 +311,7 @@ parser::parse_content_type(content_type& content_type,
     if (content_type_h == headers.end())
     {
         content_type = content_type::not_specified;
+        parse_phase_ = parse_phase::parse_content_type_finished;
         return;
     }
 

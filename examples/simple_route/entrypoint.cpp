@@ -47,15 +47,26 @@ int main()
         response.set_status(http_status::ok);
     });
 
+    auto route2 = std::make_shared<route>(http_method::get, "/",
+                                          [](http_request const& request, http_response& response)
+    {
+        auto raw = R"({
+    "data": "ola"
+})";
+
+        response.set_body(raw);
+        response.set_status(http_status::ok);
+    });
 
     router_middleware->add_router(route1);
+    router_middleware->add_router(route2);
     http.server()->add_middleware(router_middleware);
 
     http.start();
 
     for(;;)
     {
-        std::this_thread::sleep_for(std::chrono::seconds(1));
+        std::this_thread::sleep_for(std::chrono::nanoseconds(1));
     }
 
     http.stop();
