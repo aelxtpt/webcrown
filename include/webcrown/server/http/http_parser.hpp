@@ -66,10 +66,10 @@ class parser
     // max header size
     std::uint32_t header_limit_ = 8192;
     std::string method_;
-    std::string_view target_;
+    std::string target_;
     int protocol_version_;
     std::unordered_map<std::string, std::string> headers_;
-    std::string_view body_;
+    std::string body_;
     std::vector<http_form_upload> uploads_;
     content_type header_content_type_;
     std::size_t buffer_size_readed_;
@@ -91,7 +91,7 @@ public:
     // de uma lib de reflection, a minha, especionar memoria ?
     // para testar os metodos privados
 
-    void parse(const char* buffer, size_t size, std::error_code& ec);
+    std::optional<http_request> parse(const char* buffer, size_t size, std::error_code& ec);
 
     /// startline is the first line of the http request buffer.
     /// The basic buffer of the request http is:
@@ -148,7 +148,7 @@ public:
 };
 
 inline
-void
+std::optional<http_request>
 parser::parse(const char* buffer, size_t size, std::error_code& ec)
 {
     // Current position of the buffer in the parser
@@ -170,7 +170,7 @@ parser::parse(const char* buffer, size_t size, std::error_code& ec)
                 if (size == 0)
                 {
                     ec = make_error(http_error::need_more);
-                    return;
+                    return std::nullopt;
                 }
                 parse_phase_ = parse_phase::parse_start_line;
                 parse_start_line(it, last, ec);
@@ -197,11 +197,18 @@ parser::parse(const char* buffer, size_t size, std::error_code& ec)
                 parse_media_type(it, last, headers_, uploads_, ec);
                 break;
             }
-            case parse_phase::parse_media_type_finished:
-                parse_phase_ = parse_phase::finished;
-                break;
+
+        }
+
+        if (parse_phase_ == parse_phase::parse_media_type_finished)
+        {
+            parse_phase_ = parse_phase::finished;
+            http_request request(to_method(method_), protocol_version_, target_, headers_, uploads_);
+            return request;
         }
     }
+
+    return std::nullopt;
 }
 
 inline
@@ -363,7 +370,7 @@ parser::parse_media_type(
                 return true;
             }
 
-            printf("%c", *it);
+            //printf("%c", *it);
         }
         return false;
     };
@@ -585,7 +592,7 @@ parser::parse_media_type(
                     continue;
                 }
 
-                printf("%c - %c\n", it[0], it[1]);
+                //printf("%c - %c\n", it[0], it[1]);
 
                 if(it[0] == '\r' && it[1] == '\n')
                 {
@@ -627,17 +634,6 @@ parser::parse_media_type(
         uploads.push_back(std::move(item));
 
         parse_phase_ = parse_phase::parse_media_type_finished;
-
-        for(auto const& upload : uploads)
-        {
-            std::string file_name = "/home/alexlima/Desktop/image_xpto.jpg";
-            auto fs = std::ofstream(file_name, std::ios_base::out | std::ios_base::app | std::ios_base::binary);
-
-            printf("Writing file %s\n", file_name.c_str());
-
-            fs.write((const char*)upload.bytes->data(), upload.bytes->size());
-        }
-
     };
 
     if (parse_phase_ == parse_phase::parse_content_type_finished)

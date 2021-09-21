@@ -11,6 +11,7 @@ using webcrown::server::http::route;
 using webcrown::server::http::http_method;
 using webcrown::server::http::http_request;
 using webcrown::server::http::http_response;
+using webcrown::server::http::http_status;
 
 int main()
 {
@@ -33,7 +34,7 @@ int main()
         uint8_t img_count = 1;
         for(auto const& upload : uploads)
         {
-            auto file_name = "/Users/alex/Projects/webcrown/build/image_" + std::to_string(img_count) + ".jpg";
+            auto file_name = "/home/alexlima/Downloads/images/image_" + std::to_string(img_count) + ".jpg";
             auto fs = std::ofstream(file_name, std::ios_base::out | std::ios_base::app | std::ios_base::binary);
             
             printf("Writing file %s\n", file_name.c_str());
@@ -42,6 +43,8 @@ int main()
             
             img_count++;
         }
+
+        response.set_status(http_status::ok);
     });
 
 

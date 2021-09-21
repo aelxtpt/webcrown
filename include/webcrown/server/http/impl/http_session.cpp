@@ -25,7 +25,7 @@ void http_session::on_received(void const* buffer, std::size_t size)
                   static_cast<const char*>(buffer));
 
     // parser
-    parser_.parse(static_cast<const char*>(buffer), size, ec);
+    auto result = parser_.parse(static_cast<const char*>(buffer), size, ec);
     if (ec)
     {
         logger_->error("[http_session][on_received] failed to parser start line {}", ec.message());
@@ -39,17 +39,23 @@ void http_session::on_received(void const* buffer, std::size_t size)
         return;
     }
 
+    if (!result)
+    {
+        logger_->error("[http_session][on_received] no http request");
+        return;
+    }
+
     http_response response{};
     // middlewares
     for(auto& middleware : middlewares_)
     {
-//        middleware->on_setup(*result, response);
-//        if (middleware->should_return_now())
-//        {
-//            // TODO: GAMBI 2. Muito ruim, se esquecer, quebra tudo
-//            middleware->should_return_now(false);
-//            break;
-//        }
+        middleware->on_setup(*result, response);
+        if (middleware->should_return_now())
+        {
+            // TODO: GAMBI 2. Muito ruim, se esquecer, quebra tudo
+            middleware->should_return_now(false);
+            break;
+        }
     }
 
     // send response
@@ -57,7 +63,10 @@ void http_session::on_received(void const* buffer, std::size_t size)
     logger_->info("[http_session][on_received] Message sent to the client");
 
     // disconnect 
-    disconnect();
+    if(!disconnect())
+    {
+        logger_->error("[http_session][on_received] Failed to disconnect session.");
+    }
 }
 
 }}}

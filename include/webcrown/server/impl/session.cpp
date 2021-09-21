@@ -31,7 +31,7 @@ void session::connect()
     bytes_sent_ = 0;
 
     // test
-    socket_.set_option(asio::ip::tcp::socket::keep_alive(true));
+    //socket_.set_option(asio::ip::tcp::socket::keep_alive(true));
 
     receive_buffer_.resize(option_receive_buffer_size());
 
@@ -48,21 +48,21 @@ void session::connect()
 void
 session::clear_buffers()
 {
-    {
-        std::scoped_lock locker(send_lock_);
+    std::scoped_lock locker(send_lock_);
 
-        // Clear send buffers
-        send_buffer_main_.clear();
-        send_buffer_flush_.clear();
+    // Clear send buffers
+    send_buffer_main_.clear();
+    send_buffer_flush_.clear();
 
-        // Update statistic
-        bytes_pending_ = 0;
-        bytes_sending_ = 0;
-    }
+    // Update statistic
+    bytes_pending_ = 0;
+    bytes_sending_ = 0;
 }
 
 bool session::disconnect(std::error_code error)
 {
+    logger_->info("[session][disconnect] Disconnecting client...");
+
     if (!is_connected())
     {
         logger_->error("[session][disconnect] The server is not started");
@@ -83,7 +83,18 @@ bool session::disconnect(std::error_code error)
             return;
         }
         
-        socket_.close();
+        // Cancel the socket socket
+        std::error_code ec;
+        socket().close(ec);
+
+        if (ec)
+        {
+            logger_->error(
+                "[Session][disconnect_async][disconnect_handler] Error on close socket. Code: {}. Message: {}",
+                ec.value(),
+                ec.message());
+            return;
+        }
         
         // Update the connected flag
         connected_ = false;
@@ -106,51 +117,7 @@ bool session::disconnect(std::error_code error)
         server_->service1()->dispatch(unregister_session_handler);
     };
     
-    
-
-    return true;
-}
-
-bool session::disconnect_async(bool dispatch)
-{
-    if (!is_connected())
-    {
-        logger_->error("[Session][disconnect_async] Session is not connected");
-        return false;
-    }
-
-    auto disconnect_handler = [this]() -> void
-    {
-        if (!is_connected())
-        {
-            logger_->error("[Session][disconnect_async][disconnect_handler] Session is not connected");
-            return;
-        }
-
-        // Cancel the socket socket
-        std::error_code ec;
-        socket().close(ec);
-
-        if (ec)
-        {
-            logger_->error(
-                "[Session][disconnect_async][disconnect_handler] Error on close socket. Code: {}. Message: {}",
-                ec.value(),
-                ec.message());
-            return;
-        }
-
-        auto async_shutdown_handler = [this](std::error_code ec) { disconnect(ec); };
-
-        // Async shutdown with the shutdown handler
-        //stream_socket_.async_shutdown(async_shutdown_handler);
-        disconnect(ec);
-    };
-
-    if (dispatch)
-        io_service_->dispatch(disconnect_handler);
-    else
-        io_service_->post(disconnect_handler);
+    io_service_->dispatch(disconnect_handler);
 
     return true;
 }
@@ -191,6 +158,13 @@ void session::try_receive()
             // if the receive buffer is full, so increase its size
             if (receive_buffer_.size() == bytes_size)
                 receive_buffer_.resize(2 * bytes_size);
+
+            if (!is_connected())
+            {
+                // We manually disconnect the client, so return...
+                logger_->info("[session][try_receive][async_receive_handler] gracefully disconnected.");
+                return;
+            }
         }
 
         // Try to receive again if the session is valid

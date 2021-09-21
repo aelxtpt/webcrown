@@ -102,17 +102,12 @@ public:
     asio::ip::tcp::socket& socket() noexcept
     { return socket_; }
 
+
     /// Disconnect the session
     ///
     /// \param error - error code reason
     /// \return 'true' if the session was successfully disconnected, 'false' if the session is already disconnected
     bool disconnect(std::error_code error = {});
-
-    /// Disconnect the session async
-    ///
-    /// \param dispatch - if true, the dispatch io_service is used instead post
-    /// \return 'true' if the session was successfully disconnected, 'false' if the sesson is already disconnected
-    bool disconnect_async(bool dispatch);
 
     /// Connect the session
     void connect();
@@ -181,6 +176,8 @@ private:
 
     /// Send error notification
     void send_error(std::error_code ec);
+
+
 };
 
 }

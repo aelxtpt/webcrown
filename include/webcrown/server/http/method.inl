@@ -1,6 +1,7 @@
 #ifndef WEBCROWN_METHOD_INL
 #define WEBCROWN_METHOD_INL
 
+
 namespace webcrown {
 namespace server {
 namespace http {
