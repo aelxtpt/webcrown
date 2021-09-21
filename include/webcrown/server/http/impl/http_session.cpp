@@ -1,6 +1,6 @@
 #include "webcrown/server/http/http_session.hpp"
 #include "webcrown/server/http/http_server.hpp"
-#include "webcrown/server/http/http_parser.hpp"
+
 
 #include <algorithm>
 
@@ -25,11 +25,17 @@ void http_session::on_received(void const* buffer, std::size_t size)
                   static_cast<const char*>(buffer));
 
     // parser
-    parser p;
-    auto result = p.parse_start_line(static_cast<const char*>(buffer), size, ec);
-    if (!result)
+    parser_.parse(static_cast<const char*>(buffer), size, ec);
+    if (ec)
     {
         logger_->error("[http_session][on_received] failed to parser start line {}", ec.message());
+        return;
+    }
+
+    if (parser_.parsephase() != parse_phase::finished)
+    {
+        // need more
+        logger_->info("[http_session][on_received] need more bytes...");
         return;
     }
 
@@ -37,13 +43,13 @@ void http_session::on_received(void const* buffer, std::size_t size)
     // middlewares
     for(auto& middleware : middlewares_)
     {
-        middleware->on_setup(*result, response);
-        if (middleware->should_return_now())
-        {
-            // TODO: GAMBI 2. Muito ruim, se esquecer, quebra tudo
-            middleware->should_return_now(false);
-            break;
-        }
+//        middleware->on_setup(*result, response);
+//        if (middleware->should_return_now())
+//        {
+//            // TODO: GAMBI 2. Muito ruim, se esquecer, quebra tudo
+//            middleware->should_return_now(false);
+//            break;
+//        }
     }
 
     // send response

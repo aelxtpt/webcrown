@@ -29,6 +29,7 @@ add_subdirectory(submodules/spdlog)
 add_subdirectory(submodules/googletest)
 add_subdirectory(tests)
 add_subdirectory(examples/simple_route)
+add_subdirectory(examples/multiple_buffers_receive)
 
 # External Libs
 ## OpenSSL

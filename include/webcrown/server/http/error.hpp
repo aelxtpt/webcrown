@@ -33,6 +33,8 @@ enum class http_error : std::uint8_t
 
     content_type_not_implemented,
 
+    no_boundary_header_for_multipart,
+
     need_more
 };
 
@@ -68,6 +70,8 @@ public:
                 return "http bad field value";
             case http_error::content_type_not_implemented:
                 return "http content-type unsupported";
+            case http_error::no_boundary_header_for_multipart:
+                return "no_boundary_header_for_multipart";
             default:
                 return "unknown webcrown_http http error";
         }

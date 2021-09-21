@@ -70,7 +70,7 @@ public:
     session& operator=(session const&) = delete;
     session& operator=(session&&) = delete;
 
-    ~session() = default;
+    virtual ~session() = default;
 
     /// Get the connected server
     std::shared_ptr <webcrown::server::server>& server()  noexcept
@@ -129,7 +129,7 @@ private:
     void clear_buffers();
     
     /// Try to receive new data
-    void try_receive();
+    virtual void try_receive();
 
     /// Try to send pending data
     void try_send();

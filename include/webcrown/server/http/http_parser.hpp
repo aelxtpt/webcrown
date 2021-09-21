@@ -15,6 +15,7 @@
 #include "webcrown/server/http/http_response.hpp"
 #include "webcrown/server/http/http_method.hpp"
 
+#include <fstream>
 
 #include <stdlib.h>
 
@@ -64,8 +65,28 @@ class parser
 
     // max header size
     std::uint32_t header_limit_ = 8192;
-
+    std::string method_;
+    std::string_view target_;
+    int protocol_version_;
+    std::unordered_map<std::string, std::string> headers_;
+    std::string_view body_;
+    std::vector<http_form_upload> uploads_;
+    content_type header_content_type_;
+    std::size_t buffer_size_readed_;
+    std::shared_ptr<std::vector<std::byte>> multipart_buffer_;
+    std::size_t boundary_value_length_;
+    std::string boundary_value_;
+    std::string img_type_;
 public:
+    parser()
+        : parse_phase_(parse_phase::not_started)
+        , protocol_version_(0)
+        , buffer_size_readed_(0)
+        , boundary_value_length_(0)
+    {
+        multipart_buffer_ = std::make_shared<std::vector<std::byte>>();
+    }
+
     // TODO: Colocar os metodos como privado, mas precisa
     // de uma lib de reflection, a minha, especionar memoria ?
     // para testar os metodos privados
@@ -136,21 +157,49 @@ parser::parse(const char* buffer, size_t size, std::error_code& ec)
     // last character in the buffer
     char const* last = buffer + size;
 
-    switch(parse_phase_)
+    for(;it < last;)
     {
-        case parse_phase::not_started:
-        {
-            if (size == 0)
-            {
-                ec = make_error(http_error::need_more);
-                return;
-            }
-            parse_phase_ = parse_phase::parse_start_line;
+        if (ec)
             break;
-        }
-        case parse_phase::parse_start_line:
-        {
 
+        // We assume that the initial buffer always has the complete http start line
+        switch(parse_phase_)
+        {
+            case parse_phase::not_started:
+            {
+                if (size == 0)
+                {
+                    ec = make_error(http_error::need_more);
+                    return;
+                }
+                parse_phase_ = parse_phase::parse_start_line;
+                parse_start_line(it, last, ec);
+                break;
+            }
+            case parse_phase::parse_content_type_finished:
+            {
+                if (header_content_type_ == content_type::text ||
+                        header_content_type_ == content_type::application_json)
+                {
+                    std::string_view body;
+                    parse_body(it, last, body, ec);
+                }
+                else if(header_content_type_ == content_type::image ||
+                        header_content_type_ == content_type::image_jpeg ||
+                        header_content_type_ == content_type::multipart_formdata)
+                {
+                    parse_media_type(it, last, headers_, uploads_, ec);
+                }
+                break;
+            }
+            case parse_phase::parse_media_type_need_more:
+            {
+                parse_media_type(it, last, headers_, uploads_, ec);
+                break;
+            }
+            case parse_phase::parse_media_type_finished:
+                parse_phase_ = parse_phase::finished;
+                break;
         }
     }
 }
@@ -159,84 +208,81 @@ inline
 void
 parser::parse_start_line(char const*& it, char const* last, std::error_code& ec)
 {
-    parse_phase_ = parse_phase::started;
-
-
+    parse_phase_ = parse_phase::parse_start_line_started;
 
     // request-line   = get_method SP request-target SP HTTP-version CRLF
 
+
     std::string_view method;
+
     parse_method(it, last, method, ec);
     if (ec)
-        return std::nullopt;
+        return;
+    method_ = std::move(method);
 
     std::string_view target;
     parse_target(it, last, target, ec);
     if (ec)
-        return std::nullopt;
+        return;
+    target_ = std::move(target);
 
-    int protocol_version{};
-    parse_protocol(it, last, protocol_version, ec);
+    parse_protocol(it, last, protocol_version_, ec);
     if (ec)
-        return std::nullopt;
+        return;
 
     // we will only support http 1.1 at the moment
-    if (protocol_version < 11 || protocol_version > 11)
+    if (protocol_version_ < 11 || protocol_version_ > 11)
     {
         ec = make_error(http_error::bad_version);
-        return std::nullopt;
+        return;
     }
 
     if(it + 2 > last)
     {
         ec = make_error(http_error::incomplete_start_line);
-        return std::nullopt;
+        return;
     }
 
     if(it[0] != '\r' && it[1] != '\n')
     {
         ec = make_error(http_error::invalid_request_line);
-        return std::nullopt;
+        return;
     }
 
     // Skip the CRLR
     it += 2;
 
-    std::unordered_map<std::string, std::string> headers;
-    parse_message_header(it, last, headers, ec);
+    parse_message_header(it, last, headers_, ec);
 
     // Parse Content Type
-    content_type header_content_type;
-    parse_content_type(header_content_type, headers);
+    parse_content_type(header_content_type_, headers_);
 
-    printf("Content-Type is: %d\n", header_content_type);
+    printf("Content-Type is: %d\n", header_content_type_);
     // TODO: At the moment, we will reject all unsuported content types
     // Supported: multipart and json
-    if (header_content_type != content_type::application_json &&
-        header_content_type != content_type::multipart_formdata &&
-        header_content_type != content_type::not_specified &&
-        header_content_type != content_type::image_jpeg)
+    if (header_content_type_ != content_type::application_json &&
+        header_content_type_ != content_type::multipart_formdata &&
+        header_content_type_ != content_type::not_specified &&
+        header_content_type_ != content_type::image_jpeg)
     {
         ec = make_error(http_error::content_type_not_implemented);
-        return std::nullopt;
+        return;
     }
 
-    if(header_content_type == content_type::multipart_formdata)
-    {
-        std::vector<http_form_upload> uploads;
-        
-        // Parse body
-        parse_media_type(it, last, headers, uploads, ec);
+//    if(header_content_type == content_type::multipart_formdata)
+//    {
+//        // Parse body
+//
 
-        http_request request(to_method(method), protocol_version, target, headers, uploads);
-        return request;
-    }
+//        //http_request request(to_method(method), protocol_version, target, headers, uploads);
+//        return;
+//    }
 
-    std::string_view body;
-    parse_body(it, last, body, ec);
 
-    http_request request(to_method(method), protocol_version, target, headers, body);
-    return request;
+//    parse_body(it, last, body, ec);
+
+//    http_request request(to_method(method), protocol_version, target, headers, body);
+//    return;
 }
 
 inline
@@ -255,6 +301,8 @@ void
 parser::parse_content_type(content_type& content_type,
                    std::unordered_map<std::string, std::string> const& headers)
 {
+    parse_phase_ = parse_phase::parse_content_type;
+
     auto content_type_h = headers.find("Content-Type");
     if (content_type_h == headers.end())
     {
@@ -274,157 +322,169 @@ parser::parse_content_type(content_type& content_type,
         content_type = content_type::image_jpeg;
     else
         content_type = content_type::unknown;
+
+    parse_phase_ = parse_phase::parse_content_type_finished;
 }
 
 inline
 void
-parser::parse_media_type(char const*& it, char const* last,
-        std::unordered_map<std::string,
-        std::string> const& headers,
+parser::parse_media_type(
+        char const*& it,
+        char const* last,
+        std::unordered_map<std::string, std::string> const& headers,
         std::vector<http_form_upload>& uploads,
         std::error_code& ec)
 {
-    printf("Parsing media type\n");
 
-    auto content_type_h = headers.find("Content-Type");
-    if (content_type_h == headers.end())
-    {
-        printf("Content-type not found \n");
-        return;
-    }
 
-    // parses a media type value and any optional
-    // parameters, per RFC 1521. Media types are the values in
-    // Content-Type and Content-Disposition headers (RFC 2183).
-    // On success, parse_media_type returns the media type converted
-    // to lowercase and trimmed of white space
-
-    // text
-    // image
-    // audio
-    // video
-    // application
-    // multipart
-    // message
-
-    // The only header fields that have defined meaning for body parts are
-    // those the namesof which begin with "Content-"
-
-    // get boundary parameter
-    auto boundary_pos = content_type_h->second.find("boundary=");
-    if (boundary_pos == std::string::npos)
+    auto verify_boundary_value = [&it, &last](std::size_t boundary_value_length, std::string const& bound_value) -> bool
     {
-        printf("Boundary not found\n");
-        return;
-    }
-
-    auto boundary_value = content_type_h->second.substr(
-                boundary_pos, content_type_h->second.size());
-
-    auto boundary_v_it = boundary_value.begin();
-    
-    if (*boundary_v_it++ != 'b')
-    {
-        printf("No boundary value exists\n");
-        return;
-    }
-    if (*boundary_v_it++ != 'o')
-    {
-        printf("No boundary value exists\n");
-        return;
-    }
-    if (*boundary_v_it++ != 'u')
-    {
-        printf("No boundary value exists\n");
-        return;
-    }
-    if (*boundary_v_it++ != 'n')
-    {
-        printf("No boundary value exists\n");
-        return;
-    }
-    if (*boundary_v_it++ != 'd')
-    {
-        printf("No boundary value exists\n");
-        return;
-    }
-    if (*boundary_v_it++ != 'a')
-    {
-        printf("No boundary value exists\n");
-        return;
-    }
-    if (*boundary_v_it++ != 'r')
-    {
-        printf("No boundary value exists\n");
-        return;
-    }
-    if (*boundary_v_it++ != 'y')
-    {
-        printf("No boundary value exists\n");
-        return;
-    }
-
-    for(; boundary_v_it < boundary_value.end(); ++boundary_v_it)
-    {
-        if (*boundary_v_it == '=' || *boundary_v_it == '-')
-            continue;
-        
-        break;
-    }
-
-    auto bound_value = std::string(make_string(&*boundary_v_it, &*boundary_value.end()));
-
-    printf("Boundary value is: %s\n", bound_value.c_str());
-    
-    // Consule CRLF
-    if (it + 4 > last)
-    {
-        printf("No body for multipart\n");
-        return;
-    }
-    
-    if (it[0] == '\r' &&
-        it[1] == '\n' &&
-        it[2] == '\r' &&
-        it[3] == '\n')
-    {
-        it += 4;
-    }
-
-    // Loop to get multiple files
-    for(; it < last;)
-    {
-        auto boundary_value_length = bound_value.length();
-        auto verify_boundary_value = [&it, &last, &boundary_value_length, &bound_value]() -> bool
+        // TODO: POOR
+        for(; it < last; ++it)
         {
-            // TODO: POOR
-            for(; it < last; ++it)
+            auto match_count = 0;
+            for(auto c = 0; c < boundary_value_length; ++c)
             {
-                auto match_count = 0;
-                for(auto c = 0; c < boundary_value_length; ++c)
+                // linear scan for boundary value
+                if (it[c] != bound_value[c])
                 {
-                    if (it[c] != bound_value[c])
-                    {
-                        match_count = 0;
-                        continue;
-                    }
-                    
-                    if (*it == '-')
-                        continue;
-                    
-                    match_count++;
+                    match_count = 0;
+                    continue;
                 }
-                
-                if (match_count == boundary_value_length)
-                {
-                    return true;
-                }
-                
-                printf("%c", *it);
+
+                if (*it == '-')
+                    continue;
+
+                match_count++;
             }
-            return false;
-        };
-        
+
+            if (match_count == boundary_value_length)
+            {
+                return true;
+            }
+
+            printf("%c", *it);
+        }
+        return false;
+    };
+
+    auto parse_media_type_begin = [this, &headers, &ec, &verify_boundary_value]
+            (char const*& it, char const* last) -> void
+    {
+        parse_phase_ = parse_phase::parse_media_type;
+
+        printf("Parsing media type\n");
+
+        auto content_type_h = headers.find("Content-Type");
+        if (content_type_h == headers.end())
+        {
+            printf("Content-type not found \n");
+            return;
+        }
+
+        // parses a media type value and any optional
+        // parameters, per RFC 1521. Media types are the values in
+        // Content-Type and Content-Disposition headers (RFC 2183).
+        // On success, parse_media_type returns the media type converted
+        // to lowercase and trimmed of white space
+
+        // text
+        // image
+        // audio
+        // video
+        // application
+        // multipart
+        // message
+
+        // The only header fields that have defined meaning for body parts are
+        // those the namesof which begin with "Content-"
+
+        // get boundary parameter
+        auto boundary_pos = content_type_h->second.find("boundary=");
+        if (boundary_pos == std::string::npos)
+        {
+            printf("Boundary not found\n");
+            ec = make_error(http_error::no_boundary_header_for_multipart);
+            return;
+        }
+
+        boundary_value_ = content_type_h->second.substr(
+                    boundary_pos, content_type_h->second.size());
+
+        auto boundary_v_it = boundary_value_.begin();
+
+        if (*boundary_v_it++ != 'b')
+        {
+            printf("No boundary value exists\n");
+            return;
+        }
+        if (*boundary_v_it++ != 'o')
+        {
+            printf("No boundary value exists\n");
+            return;
+        }
+        if (*boundary_v_it++ != 'u')
+        {
+            printf("No boundary value exists\n");
+            return;
+        }
+        if (*boundary_v_it++ != 'n')
+        {
+            printf("No boundary value exists\n");
+            return;
+        }
+        if (*boundary_v_it++ != 'd')
+        {
+            printf("No boundary value exists\n");
+            return;
+        }
+        if (*boundary_v_it++ != 'a')
+        {
+            printf("No boundary value exists\n");
+            return;
+        }
+        if (*boundary_v_it++ != 'r')
+        {
+            printf("No boundary value exists\n");
+            return;
+        }
+        if (*boundary_v_it++ != 'y')
+        {
+            printf("No boundary value exists\n");
+            return;
+        }
+
+        for(; boundary_v_it < boundary_value_.end(); ++boundary_v_it)
+        {
+            if (*boundary_v_it == '=' || *boundary_v_it == '-')
+                continue;
+
+            break;
+        }
+
+        boundary_value_ = std::string(make_string(&*boundary_v_it, &*boundary_value_.end()));
+
+        printf("Boundary value is: %s\n", boundary_value_.c_str());
+
+        // Consule CRLF
+        if (it + 4 > last)
+        {
+            printf("No body for multipart\n");
+            return;
+        }
+
+        if (it[0] == '\r' &&
+            it[1] == '\n' &&
+            it[2] == '\r' &&
+            it[3] == '\n')
+        {
+            it += 4;
+        }
+
+        // TODO: Loop to get multiple files
+
+        boundary_value_length_ = boundary_value_.length();
+
         auto first = it;
 
         for(; it < last; ++it)
@@ -435,15 +495,15 @@ parser::parse_media_type(char const*& it, char const* last,
 
             break;
         }
-        
-        verify_boundary_value();
-        
+
+        verify_boundary_value(boundary_value_length_, boundary_value_);
+
         first = it;
-        
+
         for(; it < last; ++it)
         {
             // At the end of the last boundary value has two --
-            
+
             if(it[0] == '-' &&
                it[1] == '-' &&
                it[2] == '\r' &&
@@ -452,29 +512,29 @@ parser::parse_media_type(char const*& it, char const* last,
                 printf("The epilogue boundary was reached.\n");
                 return;
             }
-            
+
             if(it[0] == '\r' &&
                it[1] == '\n')
             {
                 break;
             }
         }
-        
+
         auto boundary_value_at_line = std::string(make_string(first, it));
-        
-        if (boundary_value_at_line != bound_value)
+
+        if (boundary_value_at_line != boundary_value_)
         {
             printf("Error on compare boundary value\n");
             return;
         }
-        
+
         // CRLF
         it += 2;
-        
+
         // Parse headers
         std::unordered_map<std::string, std::string> body_headers;
         parse_message_header(it, last, body_headers, ec);
-        
+
         // parse headers body
         auto content_type_h_body = body_headers.find("Content-Type");
         if (content_type_h_body == body_headers.end())
@@ -482,46 +542,114 @@ parser::parse_media_type(char const*& it, char const* last,
             printf("No content-type on body\n");
             return;
         }
-        
-        auto img_type = content_type_h_body->second;
-        
+
+        img_type_ = content_type_h_body->second;
+
         // Consume Two CRLF
         it += 4;
-        
-        auto buffer_start = &*it;
-        const char* buffer_end{};
-        
-        first = it;
-        if(verify_boundary_value())
+    };
+
+    auto parse_media_type_more = [this, &verify_boundary_value, &headers, &uploads]
+            (char const*& it, char const* last) -> void
+    {
+        auto buffer_start = it;
+        const char* buffer_end = last;
+
+        auto content_length_h = headers.find("Content-Length");
+        if (content_length_h == headers.end())
         {
-            for(;it > first; --it)
+            printf("Content-length not found \n");
+            return;
+        }
+
+        if (buffer_start == buffer_end)
+        {
+            // need more
+            parse_phase_ = parse_phase::parse_media_type_need_more;
+            return;
+        }
+
+        bool endbuffer_was_reached = false;
+
+        auto first = it;
+        if(verify_boundary_value(boundary_value_length_, boundary_value_))
+        {
+            for(;it < last; ++it)
             {
                 if (*it == '-')
                     continue;
 
-                if(it[0] == '\n' && it[-1] == '\r')
+                if (it + 2 > last)
+                {
+                    printf("end of stream \n");
+                    continue;
+                }
+
+                printf("%c - %c\n", it[0], it[1]);
+
+                if(it[0] == '\r' && it[1] == '\n')
                 {
                     // consume \r and point to the end byte of the image
-                    it -= 2;
+                    it += 2;
+                    endbuffer_was_reached = true;
                     break;
                 }
             }
-            
+
             buffer_end = &*it;
         }
         else
             buffer_end = &*last;
-        
+
         auto buffer_delta = buffer_end - buffer_start;
-    
-        auto img_buffer = std::make_shared<std::vector<std::byte>>(buffer_delta);
-    
-        std::memcpy(img_buffer.get()->data(), buffer_start, buffer_delta);
-    
+        buffer_size_readed_ += buffer_delta;
+
+        // TODO: Optimize this
+        multipart_buffer_->reserve(buffer_size_readed_);
+
+        for(auto it = buffer_start; it < buffer_end; ++it)
+        {
+            auto x = (unsigned char*)it;
+            unsigned char xx = *x;
+            multipart_buffer_->push_back(std::byte{xx});
+        }
+
+        auto content_length = std::atoi(content_length_h->second.c_str());
+        if (!endbuffer_was_reached && buffer_size_readed_ < content_length)
+        {
+            parse_phase_ = parse_phase::parse_media_type_need_more;
+            return;
+        }
+
         http_form_upload item;
-        item.format = img_type;
-        item.bytes = img_buffer;
+        item.format = img_type_;
+        item.bytes = multipart_buffer_;
         uploads.push_back(std::move(item));
+
+        parse_phase_ = parse_phase::parse_media_type_finished;
+
+        for(auto const& upload : uploads)
+        {
+            std::string file_name = "/home/alexlima/Desktop/image_xpto.jpg";
+            auto fs = std::ofstream(file_name, std::ios_base::out | std::ios_base::app | std::ios_base::binary);
+
+            printf("Writing file %s\n", file_name.c_str());
+
+            fs.write((const char*)upload.bytes->data(), upload.bytes->size());
+        }
+
+    };
+
+    if (parse_phase_ == parse_phase::parse_content_type_finished)
+    {
+        parse_media_type_begin(it, last);
+
+        // try read more
+        parse_media_type_more(it, last);
+    }
+    else if (parse_phase_ == parse_phase::parse_media_type_need_more)
+    {
+        parse_media_type_more(it, last);
     }
 }
 
@@ -529,6 +657,7 @@ inline
 void
 parser::parse_message_header(const char*& it, const char* last, std::unordered_map<std::string, std::string>& headers, std::error_code& ec)
 {
+    parse_phase_ = parse_phase::parse_headers;
     // Muito curta ?
     if(it + 2 > last)
     {
@@ -575,6 +704,8 @@ parser::parse_message_header(const char*& it, const char* last, std::unordered_m
             ++it;
         }
     }
+
+    parse_phase_ = parse_phase::parse_headers_finished;
 }
 
 inline
