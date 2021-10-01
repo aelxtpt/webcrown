@@ -4,19 +4,20 @@
 #include <shared_mutex>
 #include <map>
 
+#include <asio/error_code.hpp>
+
 namespace webcrown {
 namespace server {
 
-/// This class is responsible to connect,
-/// disconnect and manage Sessions
-class server : public std::enable_shared_from_this<server>
+/**
+ * @brief      This class describes a server.
+ */
+class server: public std::enable_shared_from_this<server>
 {
     std::atomic<bool> started_;
 
     asio::ip::tcp::acceptor socket_acceptor_;
     std::shared_ptr<asio::io_service> io_service_;
-
-    std::shared_ptr<spdlog::logger> logger_;
 
     // Asio Service
     std::shared_ptr<service> service_;
@@ -35,14 +36,7 @@ class server : public std::enable_shared_from_this<server>
     std::map<uint64_t, std::shared_ptr<session>> sessions_;
     std::atomic<uint64_t> last_generated_session_id_;
 public:
-
-    /// Initialize  server with a given Asio service, port number and address
-    ///
-    /// \param service - Asio service
-    /// \param port_num - Port number
-    /// \param address - An ipv4 or ipv6 address
     explicit server(
-        std::shared_ptr<spdlog::logger> logger,
         std::shared_ptr<service> const& service,
         uint16_t port_num,
         std::string_view address);
@@ -53,27 +47,25 @@ public:
     server& operator=(server const&) = delete;
     server& operator=(server&&) = delete;
 
-    void add_bytes_pending(uint64_t bytes) noexcept { bytes_pending_ += bytes; }
-    void add_bytes_sent(uint64_t bytes) noexcept { bytes_sent_ += bytes; }
-    void add_bytes_received(uint64_t bytes) noexcept { bytes_received_ += bytes; }
-
     virtual ~server() = default;
 
     /// Start the server
-    bool start();
+    bool start(asio::error_code& ec);
 
     /// Check if the server is started
     bool is_started() const noexcept { return started_; }
 
     // Get the Asio Service
-    std::shared_ptr<webcrown::server::service>& service1() noexcept { return service_; }
+    std::shared_ptr<webcrown::server::service> service1() noexcept { return service_; }
 
     /// Unregister the given session
     ///
     /// \param id - the session id
     void unregister_session(uint64_t id);
+
+    virtual void on_started(asio::error_code& ec) = 0;
 private:
-    void accept();
+    void accept(asio::error_code& ec);
 
     /// Create a new session
     ///
@@ -81,8 +73,7 @@ private:
     /// \param server - the connected server
     virtual std::shared_ptr<session> create_session(
         uint64_t session_id,
-        std::shared_ptr<server> const& server,
-        std::shared_ptr<spdlog::logger> const& logger);
+        std::shared_ptr<server> const& server);
 
     /// Register a new session
     ///

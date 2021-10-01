@@ -11,7 +11,7 @@ class server;
 /// data with the Client.
 class session
 {
-    // The class Server is responsable
+    // The class Server is responsible
     // to connect and disconnect the session
     friend class server;
 

@@ -3,9 +3,8 @@
 namespace webcrown {
 namespace server {
 
-service::service(const std::shared_ptr<spdlog::logger>& logger, uint threads)
-  : logger_(logger)
-  , starded_(false)
+service::service(uint threads)
+  : starded_(false)
   , round_robin_index_(0)
 {
     assert(threads <= 1 && "Threads count cannot be zero");

@@ -1,18 +1,17 @@
 #include "webcrown/server/server.hpp"
+#include "webcrown/server/error.hpp"
 #include <assert.h>
 
 namespace webcrown {
 namespace server {
 
 server::server(
-    std::shared_ptr<spdlog::logger> logger,
     std::shared_ptr<webcrown::server::service> const& service,
     uint16_t port_num,
     std::string_view address)
         : started_(false)
         , socket_acceptor_(*service->asio_service())
         , io_service_(service->asio_service())
-        , logger_(logger)
         , service_(service)
         , bytes_pending_(0)
         , bytes_sent_(0)
@@ -23,93 +22,64 @@ server::server(
 {
 }
 
-bool server::start()
-{
-    logger_->info("[server][start] Starting Server");
+void server::on_started(asio::error_code &ec) {}
 
+bool server::start(asio::error_code& ec)
+{
     assert(!is_started() && "Server is already started");
     if (is_started())
     {
-        logger_->error("[server][start] Server is already started");
+        ec = make_error(server_error::server_already_started);
         return false;
     }
 
-    auto self(this->shared_from_this());
-    auto start_handler = [this, self]()
+    asio::ip::tcp::endpoint endpoint(asio::ip::make_address(address_, ec), port_number_);
+
+    if (ec.value())
     {
-        if (is_started())
-        {
-            logger_->error("[server][start][start_handler] Server is already started");
-            return;
-        }
+        return;
+    }
 
-        asio::error_code ec;
-        asio::ip::tcp::endpoint endpoint(asio::ip::make_address(address_, ec), port_number_);
+    socket_acceptor_.open(endpoint.protocol(), ec);
 
-        if (ec.value())
-        {
-            logger_->error("[server][start][start_handler] Error on make ip address. Code: {}. Message: {}",
-                           ec.value(),
-                           ec.message());
-            return;
-        }
+    if (ec.value())
+    {
+        assert(ec.value() == 0 && "Error on open acceptor socket.");
+        return;
+    }
 
-        // Open socket
-        socket_acceptor_.open(endpoint.protocol(), ec);
+    socket_acceptor_.bind(endpoint, ec);
+    if (ec.value())
+    {
+        assert(ec.value() == 0 && "Error on bind acceptor socket.");
+        return;
+    }
 
-        if (ec.value())
-        {
-            logger_->error("[server][start][start_handler] Error on open acceptor socket. Code: {}. Message: {}",
-                     ec.value(),
-                     ec.message());
+    // Notify the OS that we want to listening for incoming connection requests
+    // on specific endpoint by this call.
+    socket_acceptor_.listen();
 
-            assert(ec.value() == 0 && "Error on open acceptor socket.");
-            return;
-        }
+    // Reset statistics
+    bytes_pending_ = 0;
+    bytes_sent_ = 0;
+    bytes_received_ = 0;
 
-        // Bind endpoint
-        socket_acceptor_.bind(endpoint, ec);
-        if (ec.value())
-        {
-            logger_->error("[server][start][start_handler] Error on bind acceptor socket. Code: {}. Message: {}",
-                     ec.value(),
-                     ec.message());
+    started_ = true;
 
-            assert(ec.value() == 0 && "Error on bind acceptor socket.");
-            return;
-        }
-
-        // Notify the OS that we want to listening for incoming connection requests
-        // on specific endpoint by this call.
-        socket_acceptor_.listen();
-
-        // Reset statistics
-        bytes_pending_ = 0;
-        bytes_sent_ = 0;
-        bytes_received_ = 0;
-
-        started_ = true;
-
-        // Perform the first server accept
-        accept();
-    };
-
-    // post start hander
-    io_service_->post(start_handler);
+    // Perform the first server accept
+    accept(ec);
 
     return true;
 }
 
-void server::accept()
+void server::accept(asio::error_code& ec)
 {
     assert(is_started() && "Server is not started");
     if (!is_started())
     {
-        logger_->warn("[server][accept] Server is not started");
+        ec = make_error(server_error::server_not_started);
         return;
     }
-
-    logger_->info("[server][accept] Initializing the server accept");
     
     // Dispatch the accept handler
     auto self = shared_from_this();
