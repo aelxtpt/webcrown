@@ -1,5 +1,4 @@
 #include <webcrown/webcrown.hpp>
-#include <webcrown/server/http/middlewares/routing_middleware.hpp>
 
 #include <chrono>
 #include <thread>
@@ -15,14 +14,21 @@ using webcrown::server::http::http_status;
 
 int main()
 {
-    webcrown::webcrown_http http("127.0.0.1", 8115);
+    std::shared_ptr<webcrown::server::service> sv =
+            std::make_shared<webcrown::server::service>();
+
+    std::shared_ptr<http::http_server> http =
+            std::make_shared<http::http_server>(sv,
+                                                8005,
+                                                "127.0.0.1");
+
 
     //  curl -v -X POST http://localhost:8080/upload \
     -F "upload[]=@/Users/alex/GolandProjects/multipart/avatar_avatar.jpg" \
     -H "Content-Type: multipart/form-data" \
     -H 'Expect:'
 
-    auto router_middleware = std::make_shared<http::routing_middleware>(http.logger());
+    auto router_middleware = std::make_shared<http::routing_middleware>();
 
     auto route1 = std::make_shared<route>(http_method::post, "/upload",
     [](http_request const &request, http_response &response)
@@ -50,9 +56,7 @@ int main()
     auto route2 = std::make_shared<route>(http_method::get, "/",
                                           [](http_request const& request, http_response& response)
     {
-        auto raw = R"({
-    "data": "ola"
-})";
+        auto raw = R"({"data": "ola"})";
 
         response.set_body(raw);
         response.set_status(http_status::ok);
@@ -60,14 +64,26 @@ int main()
 
     router_middleware->add_router(route1);
     router_middleware->add_router(route2);
-    http.server()->add_middleware(router_middleware);
 
-    http.start();
+    http->add_middleware(router_middleware);
+
+    asio::error_code ec;
+    sv->start(ec);
+
+    // verify error
+
+    while(!sv->is_started())
+        pthread_yield();
+
+    http->start();
+
+    while(!http->is_started())
+        pthread_yield();
 
     for(;;)
     {
         std::this_thread::sleep_for(std::chrono::nanoseconds(1));
     }
 
-    http.stop();
+    sv->stop(ec);
 }

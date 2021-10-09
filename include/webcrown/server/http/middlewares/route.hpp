@@ -3,7 +3,7 @@
 #include "webcrown/server/http/http_method.hpp"
 #include "webcrown/server/http/http_request.hpp"
 #include "webcrown/server/http/http_response.hpp"
-#include "webcrown/common/string/string.hpp"
+#include "webcrown/common/string/string_common.hpp"
 
 #include <string>
 #include <stdexcept>

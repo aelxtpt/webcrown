@@ -10,13 +10,10 @@ namespace http {
 
 class cors_middleware : public middleware
 {
-    std::shared_ptr<spdlog::logger> logger_;
     bool should_return_now_;
 public:
-    explicit cors_middleware(
-        std::shared_ptr<spdlog::logger> logger)
-        : logger_(logger)
-        , should_return_now_(false)
+    explicit cors_middleware()
+        : should_return_now_(false)
     {}
 
     void on_setup(http_request const& request, http_response& response) override

@@ -3,7 +3,7 @@
 #include "status.hpp"
 #include <string>
 #include <unordered_map>
-#include "webcrown/common/string/string.hpp"
+#include "webcrown/common/string/string_common.hpp"
 
 namespace webcrown {
 namespace server {

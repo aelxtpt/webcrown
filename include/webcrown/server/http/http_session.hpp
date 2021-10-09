@@ -14,13 +14,11 @@ class http_session :
 	public std::enable_shared_from_this<http_session>
 {
     std::vector<std::shared_ptr<middleware>> middlewares_;
-    std::shared_ptr<spdlog::logger> logger_;
     parser parser_;
 public:
     explicit http_session(
       uint64_t session_id,
-      std::shared_ptr<http_server> server,
-      std::shared_ptr<spdlog::logger> const& logger);
+      std::shared_ptr<http_server> server);
 
     http_session(http_session const&) = delete;
     http_session(http_session &&) = delete;
@@ -36,6 +34,10 @@ public:
     void on_received(void const* buffer, std::size_t size) override;
 
     // session interface
+
+    // session interface
+private:
+    void on_error(asio::error_code &ec) override;
 };
 
 }}}

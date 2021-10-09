@@ -13,10 +13,8 @@ namespace http {
 class routing_middleware : public middleware {
 
     std::vector<std::shared_ptr<route>> routers_;
-    std::shared_ptr<spdlog::logger> logger_;
 public:
-    explicit routing_middleware(std::shared_ptr<spdlog::logger> logger)
-        : logger_(logger)
+    explicit routing_middleware()
     {}
 
     routing_middleware(routing_middleware const &) = delete;
@@ -32,13 +30,13 @@ public:
 	  // find route
 	  for (auto const &r : routers_)
 	  {
-	      logger_->info("[routing_middleware] Matching any route with {}", request.target());
+          //logger_->info("[routing_middleware] Matching any route with {}", request.target());
 
 		  if (r->is_match_with_target_request(request.target()) && r->method() == request.method())
 		  {
-		      logger_->info("[routing_middleware] route {} match!", r->uri_target());
+              //logger_->info("[routing_middleware] route {} match!", r->uri_target());
 
-		      logger_->info("[routing_middleware] calling route callback");
+              //logger_->info("[routing_middleware] calling route callback");
 		      auto&& cb = r->callback();
 
 		      try
@@ -47,8 +45,8 @@ public:
               }
 		      catch(std::exception const& ex)
               {
-		          logger_->error("[routing_middleware] Error on callback of the router. {}",
-                           ex.what());
+//		          logger_->error("[routing_middleware] Error on callback of the router. {}",
+//                           ex.what());
 
 		          response.set_status(http_status::internal_server_error);
 		          break;
@@ -63,7 +61,7 @@ public:
 	  // return http response 404
 	  if (!route_found)
 	  {
-	      logger_->error("[routing_middleware] router not found!");
+          //logger_->error("[routing_middleware] router not found!");
 	      response.set_status(http_status::not_found);
 	  }
   }

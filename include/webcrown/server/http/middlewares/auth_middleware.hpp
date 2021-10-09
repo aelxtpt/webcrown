@@ -40,9 +40,8 @@ public:
             std::shared_ptr<route> route,
             auth_authorization_level level)>;
 
-    explicit auth_middleware(std::shared_ptr<spdlog::logger> logger)
-        : logger_(logger)
-        , should_return_now_(false)
+    explicit auth_middleware()
+        : should_return_now_(false)
     {}
 
     auth_middleware(auth_middleware const&) = delete;
@@ -89,7 +88,7 @@ public:
 
                 if (token.empty())
                 {
-                    logger_->error("Token is empty");
+                    //logger_->error("Token is empty");
                     forbidden_error();
                     return;
                 }
@@ -113,8 +112,8 @@ public:
         }
         catch(std::exception const& ex)
         {
-            logger_->error("[auth_middleware] Error. {}",
-                    ex.what());
+//            logger_->error("[auth_middleware] Error. {}",
+//                    ex.what());
 
             response.set_status(http_status::internal_server_error);
             return;
@@ -151,7 +150,6 @@ private:
         return result;
     }
 private:
-    std::shared_ptr<spdlog::logger> logger_;
     bool should_return_now_;
     std::vector<std::pair<std::shared_ptr<route>, auth_authorization_level>> routes_;
     auth_callback cb_;

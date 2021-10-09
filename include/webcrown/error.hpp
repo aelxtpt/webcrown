@@ -1,6 +1,4 @@
-#ifndef WEBCROWN_ERROR_HPP
-#define WEBCROWN_ERROR_HPP
-
+#pragma once
 #include <system_error>
 
 namespace webcrown {
@@ -13,5 +11,3 @@ public:
 };
 
 } // namespace webcrown
-
-#endif // WEBCROWN_ERROR_HPP

@@ -1,10 +1,11 @@
 #include "webcrown/server/service.hpp"
+#include "webcrown/server/error.hpp"
 
 namespace webcrown {
 namespace server {
 
-service::service(uint threads)
-  : starded_(false)
+service::service(bool use_pool, uint threads)
+  : started_(false)
   , round_robin_index_(0)
 {
     assert(threads <= 1 && "Threads count cannot be zero");
@@ -18,12 +19,12 @@ service::service(uint threads)
     }
 }
 
-void service::start()
+void service::start(asio::error_code &ec)
 {
     assert(!is_started() && "Service is already started");
     if (is_started())
     {
-        logger_->error("[service][start][start_handler] Service is already started");
+        ec = make_error(service_error::service_not_started);
         return;
     }
 
@@ -34,18 +35,16 @@ void service::start()
     {
         if (is_started())
         {
-            logger_->error("[service][start][start_handler] Service is already started");
             return;
         }
 
-        logger_->info("[service][start][start_handler] Service start job was initiated");
-        starded_ = true;
+        started_ = true;
     };
 
     // We need post the job in any io_service. Why?
     // Because we want execute the content of the start handler
     // when the io_service::run execute the jobs
-    // We only need of one service to execute this specific start handler
+    // We only need of ONE service to execute this specific start handler
     // Because it only print message and set started to true
     services_[0]->post(start_handler);
 
@@ -58,12 +57,12 @@ void service::start()
     }
 }
 
-void service::stop()
+void service::stop(asio::error_code &ec)
 {
     assert(is_started() && "Service is not started");
     if (!is_started())
     {
-        logger_->warn("[service][stop] Service is not started");
+        ec = make_error(service_error::service_not_started);
         return;
     }
 
@@ -71,7 +70,6 @@ void service::stop()
     {
         if (!is_started())
         {
-            logger_->warn("[service][stop][stop_handler] Service is not started");
             return;
         }
 
@@ -80,7 +78,7 @@ void service::stop()
             service->stop();
 
         // Update the started flag
-        starded_ = false;
+        started_ = false;
     };
 
     services_[0]->post(stop_handler);
@@ -88,15 +86,12 @@ void service::stop()
     // Wait for all services working threads
     for (auto& thread : threads_)
     {
-        logger_->info("[service][stop] Waiting for worker thread...");
         thread.join();
     }
 }
 
 void service::worker_thread(std::shared_ptr<asio::io_service> const& io_service)
 {
-    logger_->info("[Service][worker_thread] Worker thread was started");
-
     try
     {
         // Attach the current working thread to the Asio service
@@ -123,17 +118,11 @@ void service::worker_thread(std::shared_ptr<asio::io_service> const& io_service)
         // -F "upload[]=@/Users/alex/GolandProjects/multipart/avatar_avatar.jpg" \
         // -H "Content-Type: multipart/form-data"
 
-        logger_->error("[service][worker_thread] Asio Error on worker loop: {}",
-                       ex.what());
+        throw ex;
     }
     catch(std::exception const& ex)
     {
-        logger_->error("[service][worker_thread] Error on worker loop: {}",
-            ex.what());
-    }
-    catch(...)
-    {
-        logger_->critical("[service][worker_thread] Asio worker loop thread terminated!");
+        throw ex;
     }
 
   // TODO: call the cleanup thread handler

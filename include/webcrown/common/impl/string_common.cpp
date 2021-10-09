@@ -1,4 +1,4 @@
-#include "webcrown/common/string/string.hpp"
+#include "webcrown/common/string/string_common.hpp"
 
 namespace webcrown {
 namespace common {

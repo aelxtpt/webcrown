@@ -50,9 +50,12 @@ public:
     virtual ~server() = default;
 
     /// Start the server
-    bool start(asio::error_code& ec);
+    void start();
 
-    /// Check if the server is started
+    /**
+     * @brief Check if the server is started
+     * @return
+     */
     bool is_started() const noexcept { return started_; }
 
     // Get the Asio Service
@@ -63,9 +66,10 @@ public:
     /// \param id - the session id
     void unregister_session(uint64_t id);
 
-    virtual void on_started(asio::error_code& ec) = 0;
+    virtual void on_started() = 0;
+    virtual void on_error(asio::error_code& ec) = 0;
 private:
-    void accept(asio::error_code& ec);
+    void accept();
 
     /// Create a new session
     ///

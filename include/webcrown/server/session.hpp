@@ -7,8 +7,10 @@ namespace server {
 
 class server;
 
-/// This class mantains a socket with the Client. Responsable to read and write
-/// data with the Client.
+/**
+ * @brief This class mantains a socket with the Client. Responsable to read and write
+ * data with the Client.
+ */
 class session
 {
     // The class Server is responsible
@@ -22,10 +24,10 @@ class session
     uint64_t bytes_sent_;
 
     /// Server & session
-    std::shared_ptr <webcrown::server::server> server_;
+    std::shared_ptr<webcrown::server::server> server_;
 
     /// Asio IO service
-    std::shared_ptr <asio::io_service> io_service_;
+    std::shared_ptr<asio::io_service> io_service_;
 
     /// Session Socket
     asio::ip::tcp::socket socket_;
@@ -42,9 +44,6 @@ class session
     // Receive Buffer
     std::vector<uint8_t> receive_buffer_;
 
-    // Logger
-    std::shared_ptr <spdlog::logger> logger_;
-
     // Lock for the send
     std::mutex send_lock_;
 
@@ -55,14 +54,14 @@ class session
     // Flag for sending buffer
     bool sending_;
 public:
-    /// Initialize the session with a given server
-    ///
-    /// \param session_id - unique identifier of the session
-    /// \param server - Connected server
+    /**
+     * @brief Initialize session with the given server
+     * @param session_id
+     * @param server
+     */
     explicit session(
         uint64_t session_id,
-        std::shared_ptr <webcrown::server::server> const& server,
-        std::shared_ptr <spdlog::logger> const& logger);
+        std::shared_ptr <webcrown::server::server> const& server);
 
     session(session const&) = delete;
     session(session&&) = delete;
@@ -72,7 +71,6 @@ public:
 
     virtual ~session() = default;
 
-    /// Get the connected server
     std::shared_ptr <webcrown::server::server>& server()  noexcept
     { return server_; }
 
@@ -107,14 +105,10 @@ public:
     ///
     /// \param error - error code reason
     /// \return 'true' if the session was successfully disconnected, 'false' if the session is already disconnected
-    bool disconnect(std::error_code error = {});
+    bool disconnect(asio::error_code error = {});
 
     /// Connect the session
     void connect();
-
-    virtual size_t send(void const* buffer, size_t size);
-
-    virtual size_t send(std::string_view text) { return send(text.data(), text.size()); }
 
     virtual bool send_async(void const* buffer, size_t size);
 
@@ -139,10 +133,12 @@ private:
     /// Event dispatched when the session is handshaked
     virtual void on_handshaked() {};
 
+    virtual void on_disconnect(asio::error_code ec) {}
+
     /// Event dispatched when the session is disconnected
     ///
     /// \param error - error code reason
-    virtual void on_disconnected(std::error_code error) {}
+    virtual void on_disconnected(asio::error_code error) {}
 
     /// Event dispatched when the session receive any bytes
     ///
@@ -169,13 +165,10 @@ private:
     virtual void on_empty() {}
 
     /// Handle error notification
-    /// \param error - Error code
-    /// \param category - Error category
-    /// \param message - Error message
-    virtual void on_error(int error, std::string const& category, std::string const& message) {}
+    virtual void on_error(asio::error_code& ec) {};
 
     /// Send error notification
-    void send_error(std::error_code ec);
+    void send_error(asio::error_code ec);
 
 
 };

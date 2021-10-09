@@ -17,7 +17,6 @@ class http_server : public server
   std::vector<std::shared_ptr<middleware>> middlewares_;
 public:
   explicit http_server(
-      std::shared_ptr<spdlog::logger> logger,
       std::shared_ptr<webcrown::server::service> const& service,
       uint16_t port_num,
       std::string_view address);
@@ -32,12 +31,13 @@ public:
 
   void add_middleware(std::shared_ptr<middleware> const middleware);
 
-  // SslServer interface
+  void on_error(asio::error_code &ec) override;
+  void on_started() override;
 private:
   std::shared_ptr<session> create_session(
     uint64_t session_id,
-    std::shared_ptr<server> const& server,
-    std::shared_ptr<spdlog::logger> const& logger) override;
+    std::shared_ptr<server> const& server) override;
+
 };
 
 }}}

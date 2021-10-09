@@ -1,13 +1,13 @@
 #include "webcrown/server/session.hpp"
 #include "webcrown/server/server.hpp"
+#include "webcrown/server/error.hpp"
 
 namespace webcrown {
 namespace server {
 
 session::session(
     uint64_t session_id,
-    std::shared_ptr<webcrown::server::server> const& server,
-    std::shared_ptr<spdlog::logger> const& logger)
+    std::shared_ptr<webcrown::server::server> const& server)
     : bytes_pending_(0)
     , bytes_sending_(0)
     , bytes_received_(0)
@@ -18,7 +18,6 @@ session::session(
     , connected_(false)
     , receiving_(false)
     , session_id_(session_id)
-    , logger_(logger)
     , send_buffer_flush_offset(0)
     , sending_(false)
 {}
@@ -59,40 +58,34 @@ session::clear_buffers()
     bytes_sending_ = 0;
 }
 
-bool session::disconnect(std::error_code error)
+bool session::disconnect(asio::error_code error)
 {
-    logger_->info("[session][disconnect] Disconnecting client...");
-
     if (!is_connected())
     {
-        logger_->error("[session][disconnect] The server is not started");
+        error = make_error(server_error::server_not_started);
+        on_error(error);
         return false;
     }
 
-    if (error)
-    {
-        logger_->error("[session][disconnect] The server will be disconnect with reason: {}",
-                       error.message());
-    }
+    // Notify that session will be disconnected with the error
+    on_disconnect(error);
     
-    auto disconnect_handler = [this, error]()
+    auto disconnect_handler = [this]()
     {
+        asio::error_code ec;
         if (!is_connected())
         {
-            logger_->error("[session][disconnect][disconnect_handler] The server is not started");
+            ec = make_error(server_error::server_not_started);
+            on_error(ec);
             return;
         }
         
         // Cancel the socket socket
-        std::error_code ec;
         socket().close(ec);
 
         if (ec)
         {
-            logger_->error(
-                "[Session][disconnect_async][disconnect_handler] Error on close socket. Code: {}. Message: {}",
-                ec.value(),
-                ec.message());
+            on_error(ec);
             return;
         }
         
@@ -106,7 +99,7 @@ bool session::disconnect(std::error_code error)
         // clear buffers
         clear_buffers();
         
-        on_disconnected(error);
+        on_disconnected(ec);
         
         // dispatch unregister session
         auto unregister_session_handler = [this]()
@@ -124,15 +117,16 @@ bool session::disconnect(std::error_code error)
 
 void session::try_receive()
 {
+    asio::error_code ec;
     if (receiving_)
     {
-        logger_->warn("[session][try_receive] Session is already in process of receiving...");
         return;
     }
 
     if(!is_connected())
     {
-        logger_->info("[session][try_receive] session is not connected...");
+        ec = make_error(server_error::server_not_started);
+        on_error(ec);
         return;
     }
     
@@ -141,9 +135,6 @@ void session::try_receive()
     auto async_receive_handler = [this](asio::error_code const& ec, std::size_t bytes_size)
     {
         receiving_ = false;
-
-        logger_->info("[session][try_receive][async_receive_handler] receiving message {} bytes",
-                      bytes_size);
         
         // Received some data from the client
         if (bytes_size > 0)
@@ -162,7 +153,6 @@ void session::try_receive()
             if (!is_connected())
             {
                 // We manually disconnect the client, so return...
-                logger_->info("[session][try_receive][async_receive_handler] gracefully disconnected.");
                 return;
             }
         }
@@ -184,73 +174,23 @@ std::size_t session::option_receive_buffer_size() const
     asio::socket_base::receive_buffer_size option;
     socket_.get_option(option);
 
-    logger_->info("[option_receive_buffer_size] buffer size: {} ",
-            option.value());
-
     return option.value();
 }
-
-size_t session::send(void const* buffer, size_t size)
-{
-//    if (!is_handshaked())
-//    {
-//        logger_->error("[SslSession][send] Session is not handshaked");
-//        return 0;
-//    }
-
-    if (size == 0)
-    {
-        logger_->error("[SslSession][send] size is zero");
-        return 0;
-    }
-
-    assert((buffer != nullptr) && "Pointer to the buffer should not be null!");
-    if (buffer == nullptr)
-    {
-        logger_->error("[SslSession][send] pointer to the buffer is null");
-        return 0;
-    }
-
-    asio::error_code ec;
-
-    // Send data to the client
-    size_t sent = asio::write(socket_, asio::buffer(buffer, size), ec);
-    if (sent <= 0)
-    {
-        send_error(ec);
-        disconnect(ec);
-        return sent;
-    }
-
-    // Update statistic
-    bytes_sent_ += sent;
-    // server_->add_bytes_sent(sent); // TODO: Race condition ?
-
-    // call the buffer sent handler
-    on_sent(sent, bytes_pending());
-
-    return sent;
-}
-
 bool
 session::send_async(void const* buffer, size_t size)
 {
-//    if(!is_handshaked())
-//    {
-//        logger_->error("[SslSession][send_async] Session is not handshaked");
-//        return 0;
-//    }
+    asio::error_code ec;
 
     if (size == 0)
     {
-        logger_->error("[SslSession][send_async] size is zero");
+        ec = make_error(session_error::sent_bytes_is_zero);
         return 0;
     }
 
     assert((buffer != nullptr) && "Pointer to the buffer should not be null!");
     if (buffer == nullptr)
     {
-        logger_->error("[SslSession][send_async] pointer to the buffer is null");
+        ec = make_error(session_error::sent_buffer_is_nullptr);
         return 0;
     }
 
@@ -288,7 +228,6 @@ session::try_send()
 {
     if (sending_)
     {
-        logger_->error("[Session][send_try_send] It already sending...");
         return;
     }
 
@@ -334,9 +273,9 @@ session::try_send()
 //        }
 
         // Send some data to the client
-        if (size <= 0)
+        if (size == 0)
         {
-	        logger_->error("[SslSession][try_send_async_write_handler] size is zero");
+            auto ec = make_error(session_error::sent_bytes_is_zero);
             return;
         }
 
@@ -376,7 +315,7 @@ session::try_send()
 }
 
 void
-session::send_error(std::error_code ec)
+session::send_error(asio::error_code ec)
 {
     // Skip asio disconnect errors
     if ((ec == asio::error::connection_aborted) ||
@@ -386,7 +325,7 @@ session::send_error(std::error_code ec)
         (ec == asio::error::operation_aborted))
         return;
 
-    on_error(ec.value(), ec.category().name(), ec.message());
+    on_error(ec);
 }
 //
 //template<typename SocketSecurityT>
