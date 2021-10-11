@@ -1,7 +1,7 @@
 #pragma once
 
 #include <memory>
-#include <spdlog/logger.h>
+
 #include "webcrown/server/http/middlewares/http_middleware.hpp"
 
 namespace webcrown {

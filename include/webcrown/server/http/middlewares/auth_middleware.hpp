@@ -4,7 +4,7 @@
 #include <functional>
 #include <vector>
 #include <memory>
-#include <spdlog/logger.h>
+
 
 namespace webcrown {
 namespace server {

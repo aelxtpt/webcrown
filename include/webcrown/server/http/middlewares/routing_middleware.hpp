@@ -4,7 +4,7 @@
 #include <functional>
 #include <unordered_map>
 #include <memory>
-#include <spdlog/logger.h>
+
 
 namespace webcrown {
 namespace server {

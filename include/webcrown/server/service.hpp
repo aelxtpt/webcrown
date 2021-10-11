@@ -3,7 +3,7 @@
 #include <asio.hpp>
 #include <memory>
 #include <vector>
-#include <spdlog/spdlog.h>
+
 
 namespace webcrown {
 namespace server {
