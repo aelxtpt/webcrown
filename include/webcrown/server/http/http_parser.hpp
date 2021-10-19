@@ -6,6 +6,7 @@
 #include <unordered_map>
 #include <cstring>
 #include <string>
+#include <optional>
 
 #include "webcrown/server/http/http_method.hpp"
 #include "enums.hpp"
