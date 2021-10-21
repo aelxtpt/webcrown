@@ -107,7 +107,7 @@ route::is_match_with_target_request(std::string_view target)
         // Found slash, check if match if the uri_target from the route
         if (*it == '/')
         {
-            auto real_target = std::string(begin, ++it);
+            auto real_target = std::string(begin, it++);
             if (real_target == uri_target_)
             {
                 match_binding_target = true;

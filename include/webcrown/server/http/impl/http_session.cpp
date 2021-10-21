@@ -1,8 +1,9 @@
 #include "webcrown/server/http/http_session.hpp"
 #include "webcrown/server/http/http_server.hpp"
 
-
 #include <algorithm>
+
+#include "webcrown/definitions.hpp"
 
 namespace webcrown {
 namespace server {
@@ -17,6 +18,10 @@ http_session::http_session(uint64_t session_id,
 void http_session::on_received(void const* buffer, std::size_t size)
 {
     std::error_code ec{};
+
+    SPDLOG_DEBUG("webcrown::http_session::on_received | buffer: {}, size: {}",
+                 static_cast<const char*>(buffer),
+                 size);
 
     // parser
     auto result = parser_.parse(static_cast<const char*>(buffer), size, ec);

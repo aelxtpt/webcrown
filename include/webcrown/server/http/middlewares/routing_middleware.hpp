@@ -5,6 +5,7 @@
 #include <unordered_map>
 #include <memory>
 
+#include "webcrown/definitions.hpp"
 
 namespace webcrown {
 namespace server {
@@ -31,6 +32,8 @@ public:
 	  for (auto const &r : routers_)
 	  {
           //logger_->info("[routing_middleware] Matching any route with {}", request.target());
+          SPDLOG_DEBUG("webcrown::routing_middleware::on_setup | Matching any route with {}",
+                       request.target());
 
 		  if (r->is_match_with_target_request(request.target()) && r->method() == request.method())
 		  {
