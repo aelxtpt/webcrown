@@ -198,7 +198,7 @@ route::parse()
             // Is the last ?
             if (*(it + 1) == ':')
             {
-                uri_target_ = std::string(begin, ++it);
+                uri_target_ = std::string(begin, it++);
                 break;
             }
         }
