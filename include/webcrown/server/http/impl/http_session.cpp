@@ -3,8 +3,6 @@
 
 #include <algorithm>
 
-#include "webcrown/definitions.hpp"
-
 namespace webcrown {
 namespace server {
 namespace http {

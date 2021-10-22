@@ -1,3 +1,4 @@
+
 #include "webcrown/server/service.hpp"
 #include "webcrown/server/error.hpp"
 
@@ -9,6 +10,24 @@ service::service(bool use_pool, uint threads)
   , round_robin_index_(0)
 {
     assert(threads <= 1 && "Threads count cannot be zero");
+
+    logger_ = spdlog::get(webcrown::logger_name);
+    if(!logger_)
+    {
+        // register default logger sinks
+        std::vector<spdlog::sink_ptr> sinks;
+
+        auto console_sink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
+        console_sink->set_level(spdlog::level::debug);
+        console_sink->set_pattern("%d/%m/%Y %H:%M:%S.%e.%f.%F %u [%^%l%$] [thread %t] %v");
+
+        sinks.push_back(console_sink);
+
+        webcrown::setup_logger(sinks);
+
+        logger_ = spdlog::get(webcrown::logger_name);
+    }
+
     for (uint i = 0; i < threads; ++i)
     {
         services_.emplace_back(std::make_shared<asio::io_service>());
@@ -27,6 +46,9 @@ void service::start(asio::error_code &ec)
         ec = make_error(service_error::service_not_started);
         return;
     }
+
+    SPDLOG_LOGGER_DEBUG(logger_, "webcrown::service::start Starting service: threads size: {}",
+                 threads_.size());
 
     // Reset round robin index
     round_robin_index_ = 0;

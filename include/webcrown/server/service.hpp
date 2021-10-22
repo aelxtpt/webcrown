@@ -4,6 +4,9 @@
 #include <memory>
 #include <vector>
 
+#define SPDLOG_ACTIVE_LEVEL SPDLOG_LEVEL_DEBUG
+#include "webcrown/logger/webcrown_logger.hpp"
+
 
 namespace webcrown {
 namespace server {
@@ -31,6 +34,7 @@ class service : public std::enable_shared_from_this<service>
     std::atomic<bool> started_;
     std::atomic<std::size_t> round_robin_index_;
 
+    std::shared_ptr<spdlog::logger> logger_;
 public:
     /**
      * @brief Initialize Asio service with single or multiple working threads
@@ -67,6 +71,8 @@ public:
     /// for io-service-per-thread design
     std::shared_ptr<asio::io_service>& asio_service() noexcept
     { return services_[++round_robin_index_ % services_.size()]; }
+
+    decltype(logger_) logger() const noexcept { return logger_; }
 
     /// Post the given handler
     ///

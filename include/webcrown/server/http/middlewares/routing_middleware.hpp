@@ -5,7 +5,6 @@
 #include <unordered_map>
 #include <memory>
 
-#include "webcrown/definitions.hpp"
 
 namespace webcrown {
 namespace server {
@@ -27,6 +26,8 @@ public:
     void on_setup(http_request const &request, http_response &response) override
   {
 	  bool route_found{false};
+
+      SPDLOG_DEBUG("webcrown::routing_middleware::on_setup");
 
 	  // find route
 	  for (auto const &r : routers_)

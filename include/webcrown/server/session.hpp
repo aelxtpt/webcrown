@@ -53,6 +53,8 @@ class session
 
     // Flag for sending buffer
     bool sending_;
+
+    std::shared_ptr<spdlog::logger> logger_;
 public:
     /**
      * @brief Initialize session with the given server

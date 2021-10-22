@@ -20,7 +20,9 @@ session::session(
     , session_id_(session_id)
     , send_buffer_flush_offset(0)
     , sending_(false)
-{}
+{
+    logger_ = server_->logger();
+}
 
 void session::connect()
 {
@@ -117,15 +119,21 @@ bool session::disconnect(asio::error_code error)
 
 void session::try_receive()
 {
+    SPDLOG_LOGGER_DEBUG(logger_, "webcrown::session::try_receive Trying receive some data. Session id: {}",
+                        session_id_);
     asio::error_code ec;
     if (receiving_)
     {
+        SPDLOG_LOGGER_DEBUG(logger_, "webcrown::session::try_receive already in receive mode, returning... Session id: {}",
+                            session_id_);
         return;
     }
 
     if(!is_connected())
     {
         ec = make_error(server_error::server_not_started);
+        SPDLOG_LOGGER_DEBUG(logger_, "webcrown::session::try_receive Server is not started. Session id: {}",
+                            session_id_);
         on_error(ec);
         return;
     }
@@ -135,6 +143,10 @@ void session::try_receive()
     auto async_receive_handler = [this](asio::error_code const& ec, std::size_t bytes_size)
     {
         receiving_ = false;
+
+        SPDLOG_LOGGER_DEBUG(logger_, "webcrown::session::try_receive::async_recv_handler bytes receive {}. Session id: {}",
+                            bytes_size,
+                            session_id_);
         
         // Received some data from the client
         if (bytes_size > 0)
@@ -152,6 +164,8 @@ void session::try_receive()
 
             if (!is_connected())
             {
+                SPDLOG_LOGGER_DEBUG(logger_, "webcrown::session::try_receive::async_recv_handler Gracefully disconencted. Session id: {}",
+                                    session_id_);
                 // We manually disconnect the client, so return...
                 return;
             }
@@ -176,6 +190,7 @@ std::size_t session::option_receive_buffer_size() const
 
     return option.value();
 }
+
 bool
 session::send_async(void const* buffer, size_t size)
 {
@@ -184,6 +199,9 @@ session::send_async(void const* buffer, size_t size)
     if (size == 0)
     {
         ec = make_error(session_error::sent_bytes_is_zero);
+        SPDLOG_LOGGER_DEBUG(logger_, "webcrown::session::send_async {} bytes to send, returning... Session id: {}",
+                            size,
+                            session_id_);
         return 0;
     }
 

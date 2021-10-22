@@ -35,6 +35,8 @@ class server: public std::enable_shared_from_this<server>
     std::shared_mutex sessions_lock_;
     std::map<uint64_t, std::shared_ptr<session>> sessions_;
     std::atomic<uint64_t> last_generated_session_id_;
+
+    std::shared_ptr<spdlog::logger> logger_;
 public:
     explicit server(
         std::shared_ptr<service> const& service,
@@ -60,6 +62,8 @@ public:
 
     // Get the Asio Service
     std::shared_ptr<webcrown::server::service> service1() noexcept { return service_; }
+
+    decltype(logger_) logger() const noexcept { return logger_; }
 
     /// Unregister the given session
     ///

@@ -20,6 +20,7 @@ server::server(
         , port_number_(port_num)
         , last_generated_session_id_(0)
 {
+    logger_ = service->logger();
 }
 
 void server::on_started() {}
@@ -30,6 +31,7 @@ void server::start()
     if (is_started())
     {
         auto ec = make_error(server_error::server_already_started);
+        SPDLOG_LOGGER_DEBUG(logger_, "webcrown::server::start Server is already started");
         on_error(ec);
         return;
     }
@@ -42,6 +44,7 @@ void server::start()
         if (ec.value())
         {
             assert(ec.value() == 0 && "Error on make endpoint");
+            SPDLOG_LOGGER_DEBUG(logger_, "webcrown::server::start_handler Error on make endpoint");
             on_error(ec);
             return;
         }
@@ -51,6 +54,7 @@ void server::start()
         if (ec.value())
         {
             assert(ec.value() == 0 && "Error on open acceptor socket.");
+            SPDLOG_LOGGER_DEBUG(logger_, "webcrown::server::start_handler Error on open acceptor socket.");
             on_error(ec);
             return;
         }
@@ -59,6 +63,7 @@ void server::start()
         if (ec.value())
         {
             assert(ec.value() == 0 && "Error on bind acceptor socket.");
+            SPDLOG_LOGGER_DEBUG(logger_, "webcrown::server::start_handler Error on bind acceptor socket.");
             on_error(ec);
             return;
         }
@@ -89,6 +94,7 @@ void server::accept()
     if (!is_started())
     {
         ec = make_error(server_error::server_not_started);
+        SPDLOG_LOGGER_DEBUG(logger_, "webcrown::server::accept Server is not started");
         return;
     }
     
@@ -99,26 +105,36 @@ void server::accept()
         if (!is_started())
         {
             ec = make_error(server_error::server_not_started);
+            SPDLOG_LOGGER_DEBUG(logger_, "webcrown::server::accept_handler Server is not started");
             on_error(ec);
             return;
         }
 
+        auto session_id = ++last_generated_session_id_;
+        SPDLOG_LOGGER_DEBUG(logger_, "webcrown::server::accept_handler Creating session ID {}",
+                            session_id);
         // create new session to accept
         // the earlier session is stored in sessions_. It is not lose, because
         // is a shared_ptr.
-        auto session = create_session(++last_generated_session_id_, self);
+        auto session = create_session(session_id, self);
 
-        auto async_accept_handler = [this, self, session](std::error_code ec)
+        auto async_accept_handler = [this, self, session, &session_id](std::error_code ec)
         {
             if (ec)
             {
+                SPDLOG_LOGGER_DEBUG(logger_, "webcrown::server::accept_handler::async_acpt_h Error: {}",
+                                    ec.message());
                 on_error(ec);
                 return;
             }
 
+            SPDLOG_LOGGER_DEBUG(logger_, "webcrown::server::accept_handler::async_acpt_h Registering session ID {}",
+                                session_id);
             // Register a new session
             register_session(session);
 
+            SPDLOG_LOGGER_DEBUG(logger_, "webcrown::server::accept_handler::async_acpt_h Connecting session ID {}",
+                                session_id);
             // Connect a new session
             session->connect();
 
