@@ -8,16 +8,17 @@ namespace server {
 namespace http {
 
 http_session::http_session(uint64_t session_id,
-    std::shared_ptr<http_server> server)
-  : session(session_id, server)
+                           std::shared_ptr<http_server> server)
+    : session(session_id, server)
 {
+    logger_ = logger();
 }
 
 void http_session::on_received(void const* buffer, std::size_t size)
 {
     std::error_code ec{};
 
-    SPDLOG_DEBUG("webcrown::http_session::on_received | buffer: {}, size: {}",
+    SPDLOG_LOGGER_DEBUG(logger_, "webcrown::http_session::on_received buffer: {}, size: {}",
                  static_cast<const char*>(buffer),
                  size);
 
@@ -25,6 +26,8 @@ void http_session::on_received(void const* buffer, std::size_t size)
     auto result = parser_.parse(static_cast<const char*>(buffer), size, ec);
     if (ec)
     {
+        SPDLOG_LOGGER_DEBUG(logger_, "webcrown::http_session::on_received Failed to parse start line {}",
+                            ec.message());
         //logger_->error("[http_session][on_received] failed to parser start line {}", ec.message());
         return;
     }
@@ -33,12 +36,14 @@ void http_session::on_received(void const* buffer, std::size_t size)
     {
         // need more
         //logger_->info("[http_session][on_received] need more bytes...");
+        SPDLOG_LOGGER_DEBUG(logger_, "webcrown::http_session::on_received Need more bytes...");
         return;
     }
 
     if (!result)
     {
         //logger_->error("[http_session][on_received] no http request");
+        SPDLOG_LOGGER_DEBUG(logger_, "webcrown::http_session::on_received No http request");
         return;
     }
 
@@ -46,7 +51,7 @@ void http_session::on_received(void const* buffer, std::size_t size)
     // middlewares
     for(auto& middleware : middlewares_)
     {
-        middleware->on_setup(*result, response);
+        middleware->on_setup(*result, response, logger_);
         if (middleware->should_return_now())
         {
             // TODO: GAMBI 2. Muito ruim, se esquecer, quebra tudo
@@ -62,6 +67,7 @@ void http_session::on_received(void const* buffer, std::size_t size)
     // disconnect 
     if(!disconnect())
     {
+        SPDLOG_LOGGER_DEBUG(logger_, "webcrown::http_session::on_received Failed to disconnect session");
         //logger_->error("[http_session][on_received] Failed to disconnect session.");
     }
 }

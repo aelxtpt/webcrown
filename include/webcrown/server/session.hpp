@@ -73,6 +73,8 @@ public:
 
     virtual ~session() = default;
 
+    decltype(logger_) logger() const noexcept { return logger_; }
+
     std::shared_ptr <webcrown::server::server>& server()  noexcept
     { return server_; }
 

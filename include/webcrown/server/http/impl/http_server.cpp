@@ -19,13 +19,13 @@ std::shared_ptr<session>
 http_server::create_session(uint64_t session_id,
                             std::shared_ptr<server> const& server)
 {
-  auto session = std::make_shared<http_session>(
+    auto session = std::make_shared<http_session>(
         session_id,
         std::dynamic_pointer_cast<http_server>(server));
 
-  session->middlewares(middlewares_);
+    session->middlewares(middlewares_);
 
-  return session;
+    return session;
 }
 
 void

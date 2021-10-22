@@ -15,6 +15,7 @@ class http_session :
 {
     std::vector<std::shared_ptr<middleware>> middlewares_;
     parser parser_;
+    std::shared_ptr<spdlog::logger> logger_;
 public:
     explicit http_session(
       uint64_t session_id,

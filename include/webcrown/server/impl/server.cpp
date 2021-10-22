@@ -118,7 +118,7 @@ void server::accept()
         // is a shared_ptr.
         auto session = create_session(session_id, self);
 
-        auto async_accept_handler = [this, self, session, &session_id](std::error_code ec)
+        auto async_accept_handler = [this, self, session, session_id](std::error_code ec)
         {
             if (ec)
             {

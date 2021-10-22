@@ -23,24 +23,23 @@ public:
     routing_middleware &operator=(routing_middleware const &) = delete;
     routing_middleware &operator=(routing_middleware &&) = delete;
 
-    void on_setup(http_request const &request, http_response &response) override
+    void on_setup(http_request const &request, http_response &response, std::shared_ptr<spdlog::logger> logger) override
   {
 	  bool route_found{false};
 
-      SPDLOG_DEBUG("webcrown::routing_middleware::on_setup");
+      SPDLOG_LOGGER_DEBUG(logger, "webcrown::routing_middleware::on_setup");
 
 	  // find route
 	  for (auto const &r : routers_)
 	  {
-          //logger_->info("[routing_middleware] Matching any route with {}", request.target());
-          SPDLOG_DEBUG("webcrown::routing_middleware::on_setup | Matching any route with {}",
+          SPDLOG_LOGGER_DEBUG(logger, "webcrown::routing_middleware::on_setup Matching any route with {}",
                        request.target());
 
 		  if (r->is_match_with_target_request(request.target()) && r->method() == request.method())
 		  {
-              //logger_->info("[routing_middleware] route {} match!", r->uri_target());
+              SPDLOG_LOGGER_DEBUG(logger, "webcrown::routing_middleware::on_setup Route {} match!",
+                                  r->uri_target());
 
-              //logger_->info("[routing_middleware] calling route callback");
 		      auto&& cb = r->callback();
 
 		      try
@@ -49,8 +48,8 @@ public:
               }
 		      catch(std::exception const& ex)
               {
-//		          logger_->error("[routing_middleware] Error on callback of the router. {}",
-//                           ex.what());
+                  SPDLOG_LOGGER_DEBUG(logger, "webcrown::routing_middleware::on_setup Error on call callback of the router. {}",
+                                      ex.what());
 
 		          response.set_status(http_status::internal_server_error);
 		          break;
@@ -65,7 +64,8 @@ public:
 	  // return http response 404
 	  if (!route_found)
 	  {
-          //logger_->error("[routing_middleware] router not found!");
+          SPDLOG_LOGGER_DEBUG(logger, "webcrown::routing_middleware::on_setup route {} not found!",
+                              request.target());
 	      response.set_status(http_status::not_found);
 	  }
   }

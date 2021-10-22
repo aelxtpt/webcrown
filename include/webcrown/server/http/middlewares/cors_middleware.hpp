@@ -16,14 +16,14 @@ public:
         : should_return_now_(false)
     {}
 
-    void on_setup(http_request const& request, http_response& response) override
+    void on_setup(http_request const& request, http_response& response, std::shared_ptr<spdlog::logger> logger) override
     {
         auto&& headers = request.headers();
         auto origin = headers.find("Origin");
 
         if (origin == headers.end())
         {
-            // not found required header
+            SPDLOG_LOGGER_DEBUG(logger, "webcrown::cors_middleware::on_setup Header Origin not found.");
             return;
         }
 
@@ -31,6 +31,7 @@ public:
         if (host == headers.end())
         {
             // not found required header
+            SPDLOG_LOGGER_DEBUG(logger, "webcrown::cors_middleware::on_setup Header Host not found.");
             return;
         }
 

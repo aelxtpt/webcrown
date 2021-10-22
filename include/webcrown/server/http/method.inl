@@ -27,6 +27,8 @@ to_method(std::string_view m)
         return http_method::delete_;
     else if(m == "OPTIONS")
         return http_method::options;
+    else if(m == "PATCH")
+        return http_method::patch;
     else
         return http_method::unknown;
 }
