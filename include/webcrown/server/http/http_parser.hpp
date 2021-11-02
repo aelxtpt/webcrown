@@ -15,7 +15,7 @@
 #include "webcrown/server/http/http_request.hpp"
 #include "webcrown/server/http/http_response.hpp"
 #include "webcrown/server/http/http_method.hpp"
-
+#include <spdlog/spdlog.h>
 #include <fstream>
 
 #include <stdlib.h>
@@ -332,6 +332,8 @@ parser::parse_content_type(content_type& content_type,
         content_type = content_type::image_jpeg;
     else
         content_type = content_type::unknown;
+
+    SPDLOG_LOGGER_DEBUG(logger_, "webcrown::http_parser content_type is: {}", type);
 
     parse_phase_ = parse_phase::parse_content_type_finished;
 }
