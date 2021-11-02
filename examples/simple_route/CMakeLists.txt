@@ -1,15 +1,11 @@
-cmake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION 3.15)
 
-project(webcrown_tests LANGUAGES C CXX ASM)
+project(simple_route LANGUAGES C CXX ASM)
 
-file(GLOB_RECURSE
-  SOURCE_FILES
-  ${CMAKE_PROJECT_DIR}*.cpp
-)
+include_directories(../../include)
 
-include_directories(${CMAKE_SOURCE_DIR}/submodules/googletest/googletest/include)
-include_directories(${CMAKE_SOURCE_DIR}/submodules/googletest/googlemock/include)
-include_directories(${CMAKE_SOURCE_DIR}/src/include)
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_BUILD_TYPE Debug)
 
 # External Libs
 ## OpenSSL
@@ -23,11 +19,14 @@ if (APPLE)
 endif()
 find_package(OpenSSL REQUIRED)
 
-add_executable(webcrown_tests ${SOURCE_FILES})
+## PThread
+set(THREADS_PREFER_PTHREAD_FLAG ON)
+find_package(Threads REQUIRED)
 
-target_link_libraries(webcrown_tests
-  PUBLIC
-    gtest
-    gmock
-    webcrown
-)
+add_executable(simple_route entrypoint.cpp)
+
+target_link_libraries(simple_route
+    PUBLIC
+    Threads::Threads
+    OpenSSL::SSL
+    webcrown)
