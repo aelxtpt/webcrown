@@ -11,7 +11,7 @@ http_session::http_session(uint64_t session_id,
                            std::shared_ptr<http_server> server)
     : session(session_id, server)
 {
-    logger_ = logger();
+    logger_ = session::logger();
     parser_ = parser(logger_);
 }
 
