@@ -78,12 +78,16 @@ class parser
     std::size_t boundary_value_length_;
     std::string boundary_value_;
     std::string img_type_;
+    std::shared_ptr<spdlog::logger> logger_;
 public:
-    parser()
+    parser() = default;
+
+    parser(std::shared_ptr<spdlog::logger> logger)
         : parse_phase_(parse_phase::not_started)
         , protocol_version_(0)
         , buffer_size_readed_(0)
         , boundary_value_length_(0)
+        , logger_(logger)
     {
         multipart_buffer_ = std::make_shared<std::vector<std::byte>>();
     }
@@ -267,6 +271,7 @@ parser::parse_start_line(char const*& it, char const* last, std::error_code& ec)
         header_content_type_ != content_type::image_jpeg)
     {
         ec = make_error(http_error::content_type_not_implemented);
+        SPDLOG_LOGGER_DEBUG(logger_, "webcronw::http_parser Content-type is not implemented");
         return;
     }
 

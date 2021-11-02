@@ -29,6 +29,8 @@ public:
 
     ~http_session() = default;
 
+    decltype(logger_) logger() const noexcept { return logger_; }
+
     void middlewares(std::vector<std::shared_ptr<middleware>> const& middlewares) noexcept
     { middlewares_ = middlewares; }
 
