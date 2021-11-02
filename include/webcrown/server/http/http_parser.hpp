@@ -259,7 +259,6 @@ parser::parse_start_line(char const*& it, char const* last, std::error_code& ec)
     // Parse Content Type
     parse_content_type(header_content_type_, headers_);
 
-    printf("Content-Type is: %d\n", header_content_type_);
     // TODO: At the moment, we will reject all unsuported content types
     // Supported: multipart and json
     if (header_content_type_ != content_type::application_json &&

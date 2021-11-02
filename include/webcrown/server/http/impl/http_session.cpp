@@ -18,9 +18,10 @@ void http_session::on_received(void const* buffer, std::size_t size)
 {
     std::error_code ec{};
 
-    SPDLOG_LOGGER_DEBUG(logger_, "webcrown::http_session::on_received buffer: {}, size: {}",
-                 static_cast<const char*>(buffer),
-                 size);
+    SPDLOG_LOGGER_DEBUG(logger_, "webcrown::http_session::on_received **socket level, no parse** buffer_size: {} buffer: {}",
+                        size,
+                        static_cast<const char*>(buffer)
+    );
 
     // parser
     auto result = parser_.parse(static_cast<const char*>(buffer), size, ec);
