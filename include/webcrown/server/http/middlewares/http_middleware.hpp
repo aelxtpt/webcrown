@@ -2,6 +2,7 @@
 #include <deque>
 #include "webcrown/server/http/http_request.hpp"
 #include "webcrown/server/http/http_response.hpp"
+#include <spdlog/spdlog.h>
 
 namespace webcrown {
 namespace server {
