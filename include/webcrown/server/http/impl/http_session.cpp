@@ -19,17 +19,10 @@ void http_session::on_received(void const* buffer, std::size_t size)
 {
     std::error_code ec{};
 
-    auto buffer_debug = std::string(static_cast<const char*>(buffer));
-    SPDLOG_LOGGER_DEBUG(logger_, "webcrown::http_session::on_received **socket level, no parse** real_buffer_size: {}, string buffer size {}, buffer: {}",
+    SPDLOG_LOGGER_DEBUG(logger_, "webcrown::http_session::on_received **socket level, no parse** buffer size {}, buffer: {}",
                         size,
-                        buffer_debug.size(),
-                        buffer_debug
+                        static_cast<const char*>(buffer)
     );
-
-    for(auto i = buffer_debug.begin(); i < buffer_debug.end(); ++i)
-    {
-        SPDLOG_LOGGER_DEBUG(logger_, "buffer byte: {}", *i);
-    }
 
     // parser
     auto result = parser_.parse(static_cast<const char*>(buffer), size, ec);

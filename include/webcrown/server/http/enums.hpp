@@ -38,6 +38,7 @@ enum class parse_phase : std::uint8_t
     parse_media_type_finished,
     parse_body,
     parse_body_finished,
+    parse_body_pending,
     finished
 };
 

@@ -174,7 +174,27 @@ parser::parse(const char* buffer, size_t size, std::error_code& ec)
         parse_start_line(it, last, ec);
    }
 
-   if(parse_phase_ == parse_phase::parse_content_type_finished)
+    // corner case that we need refactor later
+    // TODO: For media types, we need handle to ?
+    if(parse_phase_ == parse_phase::parse_content_type_finished)
+    {
+        auto content_length_h = headers_.find("Content-Length");
+        if (content_length_h != headers_.end())
+        {
+            auto content_length = std::atoi(content_length_h->second.c_str());
+            auto no_body = it + 1 >= last;
+            if (content_length > 0 && no_body)
+            {
+                SPDLOG_LOGGER_DEBUG(logger_,
+                                    "webcrown::http_parser content_length is greather than zero but we not received the body.");
+                parse_phase_ = parse_phase::parse_body_pending;
+
+                return std::nullopt;
+            }
+        }
+    }
+
+   if(parse_phase_ == parse_phase::parse_content_type_finished || parse_phase_ == parse_phase::parse_body_pending)
    {
         if (header_content_type_ == content_type::text ||
                 header_content_type_ == content_type::application_json ||
