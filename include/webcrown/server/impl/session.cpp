@@ -62,6 +62,8 @@ session::clear_buffers()
 
 bool session::disconnect(asio::error_code error)
 {
+    SPDLOG_LOGGER_DEBUG(logger_, "Disconnection session {} with error {}", session_id_, error.message());
+
     if (!is_connected())
     {
         error = make_error(server_error::server_not_started);
@@ -159,8 +161,13 @@ void session::try_receive()
             on_received(receive_buffer_.data(), bytes_size);
 
             // if the receive buffer is full, so increase its size
-            if (receive_buffer_.size() == bytes_size)
+            if (receive_buffer_.size() <= bytes_size)
+            {
+                SPDLOG_LOGGER_DEBUG(logger_, "webcrown::session::try_receive Resizing receive buffer because receive buffer is full. receive_buffer {} - bytes_received {}",
+                                    receive_buffer_.size(),
+                                    bytes_size);
                 receive_buffer_.resize(2 * bytes_size);
+            }
 
             if (!is_connected())
             {
@@ -177,6 +184,8 @@ void session::try_receive()
         else
             disconnect(ec);
     };
+
+    SPDLOG_LOGGER_DEBUG(logger_, "webcrown::session::try_receive receive_buffer_ size: {}", receive_buffer_.size());
 
     socket_.async_read_some(
         asio::buffer(receive_buffer_.data(), receive_buffer_.size()),
