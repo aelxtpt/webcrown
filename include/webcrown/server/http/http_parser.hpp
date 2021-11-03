@@ -182,7 +182,7 @@ parser::parse(const char* buffer, size_t size, std::error_code& ec)
         if (content_length_h != headers_.end())
         {
             auto content_length = std::atoi(content_length_h->second.c_str());
-            auto no_body = it + 1 >= last;
+            auto no_body = it + 4 >= last;
             if (content_length > 0 && no_body)
             {
                 SPDLOG_LOGGER_DEBUG(logger_,
