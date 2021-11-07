@@ -11,8 +11,8 @@ namespace http {
 
 struct http_form_upload
 {
-    std::string format;
     std::shared_ptr<std::vector<std::byte>> bytes;
+    std::unordered_map<std::string, std::string> headers;
 };
 
 class http_request

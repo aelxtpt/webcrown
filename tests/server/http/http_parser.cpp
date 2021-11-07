@@ -15,7 +15,9 @@ TEST(HTTP_PARSER, parse_method_with_invalid_characters_should_return_error)
     // Scenario
     char const* raw = "$@SER /";
 
-    parser p{};
+    auto logger = spdlog::default_logger();
+
+    parser p{logger};
     std::error_code ec{};
     std::string_view method;
 
@@ -41,7 +43,8 @@ TEST(HTTP_PARSER, parse_method_with_incomplete_requestline_should_return_error)
     // Scenario
     char const* raw = "GET";
 
-    parser p{};
+    auto logger = spdlog::default_logger();
+    parser p{logger};
     std::error_code ec{};
     std::string_view method;
 
@@ -67,7 +70,8 @@ TEST(HTTP_PARSER, parse_method_with_method_without_space_should_return_error)
     // Scenario
     char const* raw = "GET/ ";
 
-    parser p{};
+    auto logger = spdlog::default_logger();
+    parser p{logger};
     std::error_code ec{};
     std::string_view method;
 
@@ -93,7 +97,8 @@ TEST(HTTP_PARSER, parse_method_filled_with_space_string_should_return_error)
     // Scenario
     char const* raw = "  ";
 
-    parser p{};
+    auto logger = spdlog::default_logger();
+    parser p{logger};
     std::error_code ec{};
     std::string_view method;
 
@@ -121,7 +126,8 @@ TEST(HTTP_PARSER, parse_method_with_two_spaces_after_should_return_expected_meth
     // Scenario
     char const* raw = "GET  ";
 
-    parser p{};
+    auto logger = spdlog::default_logger();
+    parser p{logger};
     std::error_code ec{};
     std::string_view method;
 
@@ -147,7 +153,8 @@ TEST(HTTP_PARSER, parse_target_with_space_at_begin_should_return_error)
     // Scenario
     char const* raw = " user/1934";
 
-    parser p{};
+    auto logger = spdlog::default_logger();
+    parser p{logger};
     std::error_code ec{};
     std::string_view target;
 
@@ -173,7 +180,8 @@ TEST(HTTP_PARSER, parse_target_with_incomplete_request_line_should_return_error)
     // Scenario
     char const* raw = "/user/12903 ";
 
-    parser p{};
+    auto logger = spdlog::default_logger();
+    parser p{logger};
     std::error_code ec{};
     std::string_view target;
 
@@ -201,7 +209,8 @@ TEST(HTTP_PARSER, parse_target_with_two_spaces_after_should_return_expected_targ
     // Scenario
     char const* raw = "/user/12903 HTTP/1.1";
 
-    parser p{};
+    auto logger = spdlog::default_logger();
+    parser p{logger};
     std::error_code ec{};
     std::string_view target;
 
@@ -227,7 +236,8 @@ TEST(HTTP_PARSER, parse_protocol_filled_with_space_should_return_error)
     // Scenario
     char const* raw = " HTTP/1.1";
 
-    parser p{};
+    auto logger = spdlog::default_logger();
+    parser p{logger};
     std::error_code ec{};
     int protocol;
 
@@ -253,7 +263,8 @@ TEST(HTTP_PARSER, parse_protocol_incosistent_version_should_return_error)
     // Scenario
     char const* raw = "XTTP/1.1";
 
-    parser p{};
+    auto logger = spdlog::default_logger();
+    parser p{logger};
     std::error_code ec{};
     int protocol{};
 
@@ -279,7 +290,8 @@ TEST(HTTP_PARSER, parse_protocol_all_ok_should_return_expected_version)
     // Scenario
     char const* raw = "HTTP/1.1";
 
-    parser p{};
+    auto logger = spdlog::default_logger();
+    parser p{logger};
     std::error_code ec{};
     int protocol{};
 
@@ -303,7 +315,8 @@ TEST(HTTP_PARSER, parse_message_header)
     // Scenario
     char const* raw = "User-Agent: PostmanRuntime/7.26.10\r\nAccept: */*\r\nPostman-Token: 957ca241-fd52-44eb-915a-5c40c5c21bfc\r\nHost: localhost:8443\r\nAccept-Encoding: gzip, deflate, br\r\nConnection: keep-alive\r\n\r\n";
 
-    parser p{};
+    auto logger = spdlog::default_logger();
+    parser p{logger};
     std::error_code ec{};
 
     char const*& it = raw;
@@ -333,7 +346,8 @@ TEST(HTTP_PARSER, parse_body)
     // Scenario
     char const* raw = "{\n    \"user\": \"alex\"\n}";
 
-    parser p{};
+    auto logger = spdlog::default_logger();
+    parser p{logger};
     std::error_code ec{};
 
     char const*& it = raw;

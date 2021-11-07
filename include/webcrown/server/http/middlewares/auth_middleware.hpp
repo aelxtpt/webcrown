@@ -64,8 +64,7 @@ public:
             for(auto const& r : routes_)
             {
                 auto&& route = r.first;
-                if(!(route->is_match_with_target_request(request.target()) &&
-                     route->method() == request.method()))
+                if(!(route->is_match_with_target_request(request.target(), request.method())))
                 {
                     continue;
                 }

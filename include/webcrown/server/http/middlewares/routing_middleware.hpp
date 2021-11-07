@@ -35,7 +35,7 @@ public:
           SPDLOG_LOGGER_DEBUG(logger, "webcrown::routing_middleware::on_setup Matching any route with {}",
                        request.target());
 
-		  if (r->is_match_with_target_request(request.target()) && r->method() == request.method())
+		  if (r->is_match_with_target_request(request.target(), request.method()))
 		  {
               SPDLOG_LOGGER_DEBUG(logger, "webcrown::routing_middleware::on_setup Route {} match!",
                                   r->uri_target());

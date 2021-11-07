@@ -18,12 +18,17 @@ namespace webcrown {
 namespace server {
 namespace http {
 
+struct route_parameters_t
+{
+    std::string name;
+    std::string value;
+    int bind_pos;
+};
+
 // https://tools.ietf.org/html/rfc3986
 class route
 {
-    using path_parameter_name = std::string;
-    using path_parameter_value = std::string;
-    using path_parameters_type = std::vector<std::pair<path_parameter_name, path_parameter_value>>;
+    using path_parameters_type = std::vector<route_parameters_t>;
 
     using route_callback =
         std::function<void(http_request const &request, http_response &response)>;
@@ -31,12 +36,14 @@ class route
     // TODO: Parse at compile time ?
     std::string path_;
     std::string uri_target_;
+    std::string full_path_binded_;
     http_method method_;
     path_parameters_type path_parameters_;
     route_callback cb_;
 public:
     explicit route(http_method method, std::string_view path, route_callback cb)
         : path_(path)
+        , full_path_binded_(path_)
         , method_(method)
         , cb_(std::move(cb))
     {
@@ -45,6 +52,7 @@ public:
 
     explicit route(http_method method, std::string_view path)
         : path_(path)
+        , full_path_binded_(path_)
         , method_(method)
     {
         parse();
@@ -52,7 +60,7 @@ public:
 
     [[nodiscard]] std::string uri_target() const noexcept { return uri_target_; }
 
-    bool is_match_with_target_request(std::string_view target);
+    bool is_match_with_target_request(std::string_view target, http_method method);
 
     http_method method() const noexcept { return method_; }
 
@@ -73,7 +81,7 @@ private:
 
 inline
 bool
-route::is_match_with_target_request(std::string_view target)
+route::is_match_with_target_request(std::string_view target, http_method method)
 {
     if(!common::string_utils::starts_with(target, "/"))
     {
@@ -84,6 +92,11 @@ route::is_match_with_target_request(std::string_view target)
     if (target.empty())
     {
         // Error
+        return false;
+    }
+
+    if (method != method_)
+    {
         return false;
     }
 
@@ -150,7 +163,12 @@ route::is_match_with_target_request(std::string_view target)
     {
         auto path_parameter_value = find_next_path_parameter_value(it, end);
         if (path_parameter_value)
-            first->second.swap(*path_parameter_value);
+        {
+            first->value.swap(*path_parameter_value);
+
+            auto key_pos = full_path_binded_.find(first->name);
+            full_path_binded_ = full_path_binded_.replace(key_pos - 1, first->name.length() +1, first->value);
+        }
 
         // End of the uri or separator to a next value, we need eat it, because will break the lambda above
         if(*it == '/')
@@ -159,6 +177,10 @@ route::is_match_with_target_request(std::string_view target)
         }
     }
 
+    if(target != full_path_binded_)
+    {
+        return false;
+    }
 
     return true;
 }
@@ -216,8 +238,12 @@ route::parse()
     {
         if (*it == ':')
         {
+            route_parameters_t params;
+            params.bind_pos = it - begin;
             auto key = extract_next_bind_key(it, end);
-            path_parameters_.push_back({key, ""});
+            params.name = key;
+
+            path_parameters_.push_back(params);
         }
     }
 

@@ -10,9 +10,9 @@ namespace http {
 http_session::http_session(uint64_t session_id,
                            std::shared_ptr<http_server> server)
     : session(session_id, server)
+    , parser_(session::logger())
 {
     logger_ = session::logger();
-    parser_ = parser(logger_);
 }
 
 void http_session::on_received(void const* buffer, std::size_t size)

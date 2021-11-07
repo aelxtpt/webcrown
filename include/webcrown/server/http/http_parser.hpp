@@ -77,12 +77,10 @@ class parser
     std::shared_ptr<std::vector<std::byte>> multipart_buffer_;
     std::size_t boundary_value_length_;
     std::string boundary_value_;
-    std::string img_type_;
+    std::unordered_map<std::string, std::string> upload_body_headers_;
     std::shared_ptr<spdlog::logger> logger_;
 public:
-    parser() = default;
-
-    parser(std::shared_ptr<spdlog::logger> logger)
+    explicit parser(std::shared_ptr<spdlog::logger> logger)
         : parse_phase_(parse_phase::not_started)
         , protocol_version_(0)
         , buffer_size_readed_(0)
@@ -405,12 +403,14 @@ parser::parse_media_type(
     {
         parse_phase_ = parse_phase::parse_media_type;
 
-        printf("Parsing media type\n");
+        SPDLOG_LOGGER_DEBUG(logger_,
+                            "webcrown::http_parser parsing media type.");
 
         auto content_type_h = headers.find("Content-Type");
         if (content_type_h == headers.end())
         {
-            printf("Content-type not found \n");
+            SPDLOG_LOGGER_DEBUG(logger_,
+                                "webcrown::http_parser Content-Type header not found.");
             return;
         }
 
@@ -435,7 +435,8 @@ parser::parse_media_type(
         auto boundary_pos = content_type_h->second.find("boundary=");
         if (boundary_pos == std::string::npos)
         {
-            printf("Boundary not found\n");
+            SPDLOG_LOGGER_DEBUG(logger_,
+                                "webcrown::http_parser boundary not found.");
             ec = make_error(http_error::no_boundary_header_for_multipart);
             return;
         }
@@ -447,42 +448,50 @@ parser::parse_media_type(
 
         if (*boundary_v_it++ != 'b')
         {
-            printf("No boundary value exists\n");
+            SPDLOG_LOGGER_DEBUG(logger_,
+                                "webcrown::http_parser no boundary value exists.");
             return;
         }
         if (*boundary_v_it++ != 'o')
         {
-            printf("No boundary value exists\n");
+            SPDLOG_LOGGER_DEBUG(logger_,
+                                "webcrown::http_parser no boundary value exists.");
             return;
         }
         if (*boundary_v_it++ != 'u')
         {
-            printf("No boundary value exists\n");
+            SPDLOG_LOGGER_DEBUG(logger_,
+                                "webcrown::http_parser no boundary value exists.");
             return;
         }
         if (*boundary_v_it++ != 'n')
         {
-            printf("No boundary value exists\n");
+            SPDLOG_LOGGER_DEBUG(logger_,
+                                "webcrown::http_parser no boundary value exists.");
             return;
         }
         if (*boundary_v_it++ != 'd')
         {
-            printf("No boundary value exists\n");
+            SPDLOG_LOGGER_DEBUG(logger_,
+                                "webcrown::http_parser no boundary value exists.");
             return;
         }
         if (*boundary_v_it++ != 'a')
         {
-            printf("No boundary value exists\n");
+            SPDLOG_LOGGER_DEBUG(logger_,
+                                "webcrown::http_parser no boundary value exists.");
             return;
         }
         if (*boundary_v_it++ != 'r')
         {
-            printf("No boundary value exists\n");
+            SPDLOG_LOGGER_DEBUG(logger_,
+                                "webcrown::http_parser no boundary value exists.");
             return;
         }
         if (*boundary_v_it++ != 'y')
         {
-            printf("No boundary value exists\n");
+            SPDLOG_LOGGER_DEBUG(logger_,
+                                "webcrown::http_parser no boundary value exists.");
             return;
         }
 
@@ -496,12 +505,11 @@ parser::parse_media_type(
 
         boundary_value_ = std::string(make_string(&*boundary_v_it, &*boundary_value_.end()));
 
-        printf("Boundary value is: %s\n", boundary_value_.c_str());
-
-        // Consule CRLF
+        // Consume CRLF
         if (it + 4 > last)
         {
-            printf("No body for multipart\n");
+            SPDLOG_LOGGER_DEBUG(logger_,
+                                "webcrown::http_parser No body for multipart");
             return;
         }
 
@@ -541,7 +549,8 @@ parser::parse_media_type(
                it[2] == '\r' &&
                it[3] == '\n')
             {
-                printf("The epilogue boundary was reached.\n");
+                SPDLOG_LOGGER_DEBUG(logger_,
+                                    "webcrown::http_parser The epilogue boundary was reached.");
                 return;
             }
 
@@ -556,7 +565,8 @@ parser::parse_media_type(
 
         if (boundary_value_at_line != boundary_value_)
         {
-            printf("Error on compare boundary value\n");
+            SPDLOG_LOGGER_DEBUG(logger_,
+                                "webcrown::http_parser Error on compare boundary value");
             return;
         }
 
@@ -571,11 +581,13 @@ parser::parse_media_type(
         auto content_type_h_body = body_headers.find("Content-Type");
         if (content_type_h_body == body_headers.end())
         {
-            printf("No content-type on body\n");
+            SPDLOG_LOGGER_DEBUG(logger_,
+                                "webcrown::http_parser No content-type on body");
             return;
         }
 
-        img_type_ = content_type_h_body->second;
+        upload_body_headers_ = body_headers;
+        //img_type_ = content_type_h_body->second;
 
         // Consume Two CRLF
         it += 4;
@@ -590,7 +602,8 @@ parser::parse_media_type(
         auto content_length_h = headers.find("Content-Length");
         if (content_length_h == headers.end())
         {
-            printf("Content-length not found \n");
+            SPDLOG_LOGGER_DEBUG(logger_,
+                                "webcrown::http_parser Content-length not found");
             return;
         }
 
@@ -613,7 +626,8 @@ parser::parse_media_type(
 
                 if (it + 2 > last)
                 {
-                    printf("end of stream \n");
+                    SPDLOG_LOGGER_DEBUG(logger_,
+                                        "webcrown::http_parser End of stream");
                     continue;
                 }
 
@@ -654,7 +668,7 @@ parser::parse_media_type(
         }
 
         http_form_upload item;
-        item.format = img_type_;
+        item.headers = upload_body_headers_;
         item.bytes = multipart_buffer_;
         uploads.push_back(std::move(item));
 
