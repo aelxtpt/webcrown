@@ -36,14 +36,12 @@ class route
     // TODO: Parse at compile time ?
     std::string path_;
     std::string uri_target_;
-    std::string full_path_binded_;
     http_method method_;
     path_parameters_type path_parameters_;
     route_callback cb_;
 public:
     explicit route(http_method method, std::string_view path, route_callback cb)
         : path_(path)
-        , full_path_binded_(path_)
         , method_(method)
         , cb_(std::move(cb))
     {
@@ -52,7 +50,6 @@ public:
 
     explicit route(http_method method, std::string_view path)
         : path_(path)
-        , full_path_binded_(path_)
         , method_(method)
     {
         parse();
@@ -83,6 +80,8 @@ inline
 bool
 route::is_match_with_target_request(std::string_view target, http_method method)
 {
+    auto full_path_binded = path_;
+
     if(!common::string_utils::starts_with(target, "/"))
     {
         // Error
@@ -166,8 +165,11 @@ route::is_match_with_target_request(std::string_view target, http_method method)
         {
             first->value.swap(*path_parameter_value);
 
-            auto key_pos = full_path_binded_.find(first->name);
-            full_path_binded_ = full_path_binded_.replace(key_pos - 1, first->name.length() +1, first->value);
+            auto key_pos = full_path_binded.find(first->name);
+            if(key_pos != std::string::npos)
+            {
+                full_path_binded = full_path_binded.replace(key_pos - 1, first->name.length() + 1, first->value);
+            }
         }
 
         // End of the uri or separator to a next value, we need eat it, because will break the lambda above
@@ -177,7 +179,7 @@ route::is_match_with_target_request(std::string_view target, http_method method)
         }
     }
 
-    if(target != full_path_binded_)
+    if(target != full_path_binded)
     {
         return false;
     }

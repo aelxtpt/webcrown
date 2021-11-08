@@ -144,7 +144,8 @@ void service::worker_thread(std::shared_ptr<asio::io_service> const& io_service)
     }
     catch(std::exception const& ex)
     {
-        throw ex;
+        printf("Exception %s\n", ex.what());
+        //throw ex;
     }
 
   // TODO: call the cleanup thread handler
