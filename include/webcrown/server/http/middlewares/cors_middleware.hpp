@@ -47,6 +47,7 @@ public:
         // Apply cors
         response.add_header("Access-Control-Allow-Origin", "*");
         response.add_header("Access-Control-Allow-Headers", "*");
+        response.add_header("Access-Control-Allow-Methods", "*");
 
         if (request.method() == http_method::options)
         {
