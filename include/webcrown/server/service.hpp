@@ -11,6 +11,10 @@
 namespace webcrown {
 namespace server {
 
+using std::vector;
+using std::shared_ptr;
+using std::atomic;
+
 /**
  * @brief This class abstracts the asio::io_service
  * asio::io_service is a central component in the Asio I/O infrastructure.
@@ -21,20 +25,20 @@ class service : public std::enable_shared_from_this<service>
     /**
      * @brief Asio services
      */
-    std::vector<std::shared_ptr<asio::io_service>> services_;
+    vector<shared_ptr<asio::io_service>> services_;
 
     /**
      * @brief Asio working threads
      */
-    std::vector<std::thread> threads_;
+    vector<std::thread> threads_;
 
     /**
      * @brief Asio server state
      */
-    std::atomic<bool> started_;
-    std::atomic<std::size_t> round_robin_index_;
+    atomic<bool> started_;
+    atomic<std::size_t> round_robin_index_;
 
-    std::shared_ptr<spdlog::logger> logger_;
+    shared_ptr<spdlog::logger> logger_;
 public:
     /**
      * @brief Initialize Asio service with single or multiple working threads
@@ -69,7 +73,7 @@ public:
     ///
     /// Method will return single Asio IO service using round-robin algorithm
     /// for io-service-per-thread design
-    std::shared_ptr<asio::io_service>& asio_service() noexcept
+    shared_ptr<asio::io_service>& asio_service() noexcept
     { return services_[++round_robin_index_ % services_.size()]; }
 
     decltype(logger_) logger() const noexcept { return logger_; }
@@ -87,6 +91,6 @@ public:
 
 private:
 
-    void worker_thread(std::shared_ptr<asio::io_service> const& io_service);
+    void worker_thread(shared_ptr<asio::io_service> const& io_service);
 };
 }}

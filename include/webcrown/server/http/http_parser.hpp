@@ -365,8 +365,6 @@ parser::parse_media_type(
         std::vector<http_form_upload>& uploads,
         std::error_code& ec)
 {
-
-
     auto verify_boundary_value = [&it, &last](std::size_t boundary_value_length, std::string const& bound_value) -> bool
     {
         // TODO: POOR

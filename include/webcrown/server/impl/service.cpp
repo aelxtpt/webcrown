@@ -2,6 +2,8 @@
 #include "webcrown/server/service.hpp"
 #include "webcrown/server/error.hpp"
 
+using std::make_shared;
+
 namespace webcrown {
 namespace server {
 
@@ -15,7 +17,7 @@ service::service(bool use_pool, uint threads)
     if(!logger_)
     {
         // register default logger sinks
-        std::vector<spdlog::sink_ptr> sinks;
+        vector<spdlog::sink_ptr> sinks;
 
         auto console_sink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
         console_sink->set_level(spdlog::level::debug);
@@ -30,7 +32,7 @@ service::service(bool use_pool, uint threads)
 
     for (uint i = 0; i < threads; ++i)
     {
-        services_.emplace_back(std::make_shared<asio::io_service>());
+        services_.emplace_back(make_shared<asio::io_service>());
 
         // Without this, the code will be executed in the caller thread
         // We will create the a thread to each service
@@ -149,6 +151,7 @@ void service::worker_thread(std::shared_ptr<asio::io_service> const& io_service)
     }
 
   // TODO: call the cleanup thread handler
+  // Call stop ?
 }
 
 }}

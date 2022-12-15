@@ -4,6 +4,7 @@ compile_commands.json
 .clangd/
 .idea/
 *.idea
+.cache/
 CMakeLists.txt.user
 .vscode/
 cmake-build-debug/
