@@ -44,7 +44,7 @@ public:
 
 		      try
               {
-		          cb(request, response);
+		          cb(request, response, r->path_parameters());
               }
 		      catch(std::exception const& ex)
               {

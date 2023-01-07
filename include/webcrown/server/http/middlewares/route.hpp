@@ -25,13 +25,13 @@ struct route_parameters_t
     int bind_pos;
 };
 
+using path_parameters_type = std::vector<route_parameters_t>;
+
 // https://tools.ietf.org/html/rfc3986
 class route
 {
-    using path_parameters_type = std::vector<route_parameters_t>;
-
     using route_callback =
-        std::function<void(http_request const &request, http_response &response)>;
+        std::function<void(http_request const &request, http_response &response, path_parameters_type const& path_parameters)>;
 
     // TODO: Parse at compile time ?
     std::string path_;
