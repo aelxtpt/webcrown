@@ -53,11 +53,8 @@ void http_session::on_received(void const* buffer, std::size_t size)
     // middlewares
     for(auto& middleware : middlewares_)
     {
-        middleware->on_setup(*result, response, logger_);
-        if (middleware->should_return_now())
+        if(!middleware->execute(*result, response, logger_))
         {
-            // TODO: GAMBI 2. Muito ruim, se esquecer, quebra tudo
-            middleware->should_return_now(false);
             break;
         }
     }

@@ -10,13 +10,11 @@ namespace http {
 
 class cors_middleware : public middleware
 {
-    bool should_return_now_;
 public:
     explicit cors_middleware()
-        : should_return_now_(false)
     {}
 
-    void on_setup(http_request const& request, http_response& response, std::shared_ptr<spdlog::logger> logger) override
+    bool execute(http_request const& request, http_response& response, std::shared_ptr<spdlog::logger> logger) override
     {
         auto&& headers = request.headers();
         auto origin = headers.find("Origin");
@@ -24,7 +22,7 @@ public:
         if (origin == headers.end())
         {
             SPDLOG_LOGGER_DEBUG(logger, "webcrown::cors_middleware::on_setup Header Origin not found.");
-            return;
+            return false;
         }
 
         auto host = headers.find("Host");
@@ -32,14 +30,14 @@ public:
         {
             // not found required header
             SPDLOG_LOGGER_DEBUG(logger, "webcrown::cors_middleware::on_setup Header Host not found.");
-            return;
+            return false;
         }
 
         if(origin->second == ("http://"+ host->second) || origin->second == ("https://"+host->second))
         {
             // request is not a CORS request but have origin header.
             // for example, use fetch api
-            return;
+            return false;
         }
 
         // TODO: Apply some validations
@@ -51,18 +49,10 @@ public:
         if (request.method() == http_method::options)
         {
             response.set_status(http_status::no_content);
-            should_return_now_ = true;
+            return false;
         }
-    }
 
-    bool should_return_now() override
-    {
-        return should_return_now_;
-    }
-
-    void should_return_now(bool flag) override
-    {
-        should_return_now_ = flag;
+        return true;
     }
 };
 

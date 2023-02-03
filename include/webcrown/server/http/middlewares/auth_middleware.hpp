@@ -50,7 +50,7 @@ public:
     auth_middleware& operator=(auth_middleware const&) = delete;
     auth_middleware& operator=(auth_middleware&&) = delete;
 
-    void on_setup(http_request const &request, http_response &response, std::shared_ptr<spdlog::logger> logger) override
+    bool execute(http_request const &request, http_response &response, std::shared_ptr<spdlog::logger> logger) override
     {
         auto forbidden_error = [&response, this]()
         {
@@ -78,7 +78,7 @@ public:
                     if (auth_header == headers.end())
                     {
                         forbidden_error();
-                        return;
+                        return false;
                     }
                 }
 
@@ -89,7 +89,7 @@ public:
                 {
                     //logger_->error("Token is empty");
                     forbidden_error();
-                    return;
+                    return false;
                 }
 
                 assert(cb_ != nullptr);
@@ -105,9 +105,11 @@ public:
                     response.set_status(http_status::unauthorized);
 
                     should_return_now_ = true;
-                    return;
+                    return false;
                 }
             }
+
+            return true;
         }
         catch(std::exception const& ex)
         {
@@ -115,23 +117,13 @@ public:
                                 ex.what());
 
             response.set_status(http_status::internal_server_error);
-            return;
+            return false;
         }
     }
 
     void authorize_route(std::shared_ptr<route>& route, auth_authorization_level level)
     {
         routes_.emplace_back(std::make_pair(route, level));
-    }
-
-    bool should_return_now() override
-    {
-        return should_return_now_;
-    }
-
-    void should_return_now(bool flag) override
-    {
-        should_return_now_ = flag;
     }
 
     auth_callback callback() const { return cb_; }

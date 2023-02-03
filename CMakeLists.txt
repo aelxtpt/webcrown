@@ -11,6 +11,7 @@ set (CMAKE_CXX_FLAGS "-Werror=return-type")
 
 include_directories(${PROJECT_SOURCE_DIR}/third_party/asio/include)
 include_directories(${PROJECT_SOURCE_DIR}/third_party/nlohmann)
+include_directories(${PROJECT_SOURCE_DIR}/third_party/reflcpp/include)
 include_directories(${PROJECT_SOURCE_DIR}/include)
 include_directories(${PROJECT_SOURCE_DIR}/submodules/spdlog/include)
 
@@ -27,7 +28,8 @@ file(GLOB_RECURSE
 # submodules
 add_subdirectory(submodules/spdlog)
 add_subdirectory(submodules/googletest)
-#add_subdirectory(tests)
+add_subdirectory(tests)
+#add_subdirectory(examples/authorization)
 #add_subdirectory(examples/simple_route)
 
 # External Libs
