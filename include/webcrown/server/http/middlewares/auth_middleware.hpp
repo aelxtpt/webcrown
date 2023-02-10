@@ -55,8 +55,6 @@ public:
         auto forbidden_error = [&response, this]()
         {
             response.set_status(http_status::forbidden);
-
-            should_return_now_ = true;
         };
 
         try
@@ -104,7 +102,6 @@ public:
                     response.set_body(body_res);
                     response.set_status(http_status::unauthorized);
 
-                    should_return_now_ = true;
                     return false;
                 }
             }
@@ -141,7 +138,6 @@ private:
         return result;
     }
 private:
-    bool should_return_now_;
     std::vector<std::pair<std::shared_ptr<route>, auth_authorization_level>> routes_;
     auth_callback cb_;
 };

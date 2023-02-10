@@ -1,4 +1,5 @@
 #include "webcrown/common/string/string_common.hpp"
+#include <cstdint>
 
 namespace webcrown {
 namespace common {
