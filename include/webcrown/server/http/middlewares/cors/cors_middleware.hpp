@@ -22,7 +22,7 @@ public:
         if (origin == headers.end())
         {
             SPDLOG_LOGGER_DEBUG(logger, "webcrown::cors_middleware::on_setup Header Origin not found.");
-            return false;
+            return true;
         }
 
         auto host = headers.find("Host");

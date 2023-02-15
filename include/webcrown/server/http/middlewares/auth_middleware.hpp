@@ -34,14 +34,15 @@ struct auth_result
  */
 class auth_middleware : public middleware
 {
+    using RoutesAuthContainerT = std::vector<std::pair<std::shared_ptr<route>, auth_authorization_level>>;
 public:
-    using auth_callback = std::function<auth_result(
+    using auth_callback = std::function<
+    auth_result(
             std::string const& token,
             std::shared_ptr<route> route,
             auth_authorization_level level)>;
 
     explicit auth_middleware()
-        : should_return_now_(false)
     {}
 
     auth_middleware(auth_middleware const&) = delete;
@@ -123,6 +124,8 @@ public:
         routes_.emplace_back(std::make_pair(route, level));
     }
 
+    RoutesAuthContainerT authorized_routes() const noexcept { return routes_; }
+
     auth_callback callback() const { return cb_; }
     void callback(auth_callback cb) { cb_ = cb; }
 
@@ -138,7 +141,7 @@ private:
         return result;
     }
 private:
-    std::vector<std::pair<std::shared_ptr<route>, auth_authorization_level>> routes_;
+    RoutesAuthContainerT routes_;
     auth_callback cb_;
 };
 

@@ -31,7 +31,7 @@ using path_parameters_type = std::vector<route_parameters_t>;
 class route
 {
     using route_callback =
-        std::function<void(http_request const &request, http_response &response, path_parameters_type const& path_parameters)>;
+        std::function<void(http_request const &request, http_response &response, path_parameters_type const& path_parameters, http_context const& context)>;
 
     // TODO: Parse at compile time ?
     std::string path_;
@@ -39,6 +39,7 @@ class route
     http_method method_;
     path_parameters_type path_parameters_;
     route_callback cb_;
+    http_context _http_context;
 public:
     explicit route(http_method method, std::string_view path, route_callback cb)
         : path_(path)
@@ -67,6 +68,8 @@ public:
 
     void callback(route_callback cb) { cb_ = cb; }
 
+    // TODO: the caller can modify, fix me
+    http_context& context() { return _http_context; }
 private:
     void parse();
     std::string extract_next_bind_key(std::string::const_iterator& it, std::string::const_iterator& last);

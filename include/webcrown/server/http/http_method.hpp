@@ -1,5 +1,6 @@
 #pragma once
 #include <string_view>
+#include <cstdint>
 
 // Faz sentido, cada enum ter um arquivo
 // Qualquer tipo de operacao sobre esse enum, fica nesse arquivo

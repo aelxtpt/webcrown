@@ -44,7 +44,7 @@ public:
 
 		        try
                 {
-		            cb(request, response, r->path_parameters());
+		            cb(request, response, r->path_parameters(), r->context());
                 }
 		        catch(std::exception const& ex)
                 {
@@ -68,6 +68,8 @@ public:
                               request.target());
 	        response.set_status(http_status::not_found);
 	    }
+
+        return false;
     }
 
     void add_router(std::shared_ptr<route> const route)

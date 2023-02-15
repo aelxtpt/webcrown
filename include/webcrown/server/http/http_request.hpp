@@ -1,5 +1,6 @@
 #pragma once
 #include "webcrown/server/http/http_method.hpp"
+#include <any>
 #include <unordered_map>
 #include <vector>
 #include <string>
@@ -9,10 +10,28 @@ namespace webcrown {
 namespace server {
 namespace http {
 
+using std::vector;
+using std::unordered_map;
+
 struct http_form_upload
 {
     std::shared_ptr<std::vector<std::byte>> bytes;
-    std::unordered_map<std::string, std::string> headers;
+    unordered_map<std::string, std::string> headers;
+};
+
+class http_context
+{
+    using context_name = std::string;
+    using context_value = std::any;
+    unordered_map<context_name, context_value> _values;
+public:
+
+    void add_value(std::pair<context_name, context_value> v)
+    {
+        _values.insert(std::move(v));
+    }
+
+    decltype(_values) values() const noexcept { return _values; }
 };
 
 class http_request

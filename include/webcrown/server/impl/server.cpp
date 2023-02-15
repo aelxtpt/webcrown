@@ -62,6 +62,7 @@ void server::start()
         socket_acceptor_.bind(endpoint, ec);
         if (ec.value())
         {
+            // TODO: Please, fix me
             assert(ec.value() == 0 && "Error on bind acceptor socket.");
             SPDLOG_LOGGER_DEBUG(logger_, "webcrown::server::start_handler Error on bind acceptor socket.");
             on_error(ec);
