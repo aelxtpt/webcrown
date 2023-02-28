@@ -176,7 +176,7 @@ parser::parse(const char* buffer, size_t size, std::error_code& ec)
     // TODO: For media types, we need handle to ?
     if(parse_phase_ == parse_phase::parse_content_type_finished)
     {
-        auto content_length_h = headers_.find("Content-Length");
+        auto content_length_h = headers_.find("content-length");
         if (content_length_h != headers_.end())
         {
             auto content_length = std::atoi(content_length_h->second.c_str());
@@ -330,7 +330,7 @@ parser::parse_content_type(content_type& content_type,
 {
     parse_phase_ = parse_phase::parse_content_type;
 
-    auto content_type_h = headers.find("Content-Type");
+    auto content_type_h = headers.find("content-type");
     if (content_type_h == headers.end())
     {
         content_type = content_type::not_specified;
@@ -404,7 +404,7 @@ parser::parse_media_type(
         SPDLOG_LOGGER_DEBUG(logger_,
                             "webcrown::http_parser parsing media type.");
 
-        auto content_type_h = headers.find("Content-Type");
+        auto content_type_h = headers.find("content-type");
         if (content_type_h == headers.end())
         {
             SPDLOG_LOGGER_DEBUG(logger_,
@@ -576,7 +576,7 @@ parser::parse_media_type(
         parse_message_header(it, last, body_headers, ec);
 
         // parse headers body
-        auto content_type_h_body = body_headers.find("Content-Type");
+        auto content_type_h_body = body_headers.find("content-type");
         if (content_type_h_body == body_headers.end())
         {
             SPDLOG_LOGGER_DEBUG(logger_,
@@ -597,7 +597,7 @@ parser::parse_media_type(
         auto buffer_start = it;
         const char* buffer_end = last;
 
-        auto content_length_h = headers.find("Content-Length");
+        auto content_length_h = headers.find("content-length");
         if (content_length_h == headers.end())
         {
             SPDLOG_LOGGER_DEBUG(logger_,
@@ -719,7 +719,7 @@ parser::parse_message_header(const char*& it, const char* last, std::unordered_m
         parse_message_header_value(it, last, header_value, ec);
 
         // TODO: Optimize me, please
-        std::string hn = std::string(header_name);
+        std::string hn = common::string_utils::to_lower(header_name);
         std::string hv = std::string(header_value);
         headers.insert({hn, hv});
 

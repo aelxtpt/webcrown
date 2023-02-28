@@ -1,4 +1,5 @@
 #include "webcrown/common/string/string_common.hpp"
+#include <algorithm>
 #include <cstdint>
 
 namespace webcrown {
@@ -49,6 +50,48 @@ string_utils::split(std::string_view str, char delimiter, bool skip_empty)
     }
 
     return tokens;
+}
+
+char 
+string_utils::to_lower_internal(char ch)
+{
+    return (char)std::tolower(ch);
+}
+
+char 
+string_utils::to_upper_internal(char ch)
+{
+    return (char)std::toupper(ch);
+}
+
+std::string 
+string_utils::to_lower(std::string_view str)
+{
+    std::string result(str);
+    lower(result);
+    return result;
+}
+
+ std::string 
+ string_utils::to_upper(std::string_view str)
+ {
+    std::string result(str);
+    upper(result);
+    return result;
+ }
+
+std::string& 
+string_utils::lower(std::string& str)
+{
+    std::transform(str.begin(), str.end(), str.begin(), to_lower_internal);
+    return str;
+}
+ 
+std::string& 
+string_utils::upper(std::string& str)
+{
+    std::transform(str.begin(), str.end(), str.begin(), to_upper_internal);
+    return str;
 }
 
 }
