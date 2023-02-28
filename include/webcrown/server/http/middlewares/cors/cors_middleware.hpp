@@ -17,7 +17,7 @@ public:
     bool execute(http_request const& request, http_response& response, std::shared_ptr<spdlog::logger> logger) override
     {
         auto&& headers = request.headers();
-        auto origin = headers.find("Origin");
+        auto origin = headers.find("origin");
 
         if (origin == headers.end())
         {
@@ -25,7 +25,7 @@ public:
             return true;
         }
 
-        auto host = headers.find("Host");
+        auto host = headers.find("host");
         if (host == headers.end())
         {
             // not found required header
