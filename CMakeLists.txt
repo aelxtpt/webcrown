@@ -7,6 +7,10 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_BUILD_TYPE Debug)
 
+option(ENABLE_ADMIN, "" OFF)
+option(ENABLE_ORM "" ON)
+option(ENABLE_TESTS "" ON)
+
 set (CMAKE_CXX_FLAGS "-Werror=return-type")
 
 include_directories(${PROJECT_SOURCE_DIR}/third_party/asio/include)
@@ -23,29 +27,23 @@ file(GLOB_RECURSE
     ${PROJECT_SOURCE_DIR}/include/*.cpp
 )
 
-#set_source_files_properties(${SOURCE_FILES} PROPERTIES LANGUAGE CXX)
+if (NOT ENABLE_ADMIN)
+file(REMOVE_RECURSE
+  SOURCE_FILES
+    ${PROJECT_SOURCE_DIR}/include/webcrown/admin/*.hpp
+    ${PROJECT_SOURCE_DIR}/include/webcrown/admin/*.h
+    ${PROJECT_SOURCE_DIR}/include/webcrown/admin/*.cpp
+    )
+endif()
 
 # submodules
-add_subdirectory(submodules/spdlog)
 add_subdirectory(submodules/googletest)
+
+if (ENABLE_TESTS)
 #add_subdirectory(tests)
+endif()
+
 #add_subdirectory(examples/authorization)
 #add_subdirectory(examples/simple_route)
-
-# External Libs
-## OpenSSL
-if (APPLE)
-    # This is a bug in CMake that causes it to prefer the system version over
-    # the one in the specified ROOT folder.
-    set(OPENSSL_ROOT_DIR ${OPENSSL_ROOT_DIR} /usr/local/opt/openssl@1.1/)
-    set(OPENSSL_CRYPTO_LIBRARY ${OPENSSL_ROOT_DIR}/lib/libcrypto.dylib CACHE FILEPATH "" FORCE)
-    set(OPENSSL_SSL_LIBRARY ${OPENSSL_ROOT_DIR}/lib/libssl.dylib CACHE FILEPATH "" FORCE)
-    include_directories(${OPENSSL_ROOT_DIR}/include)
-endif()
-find_package(OpenSSL REQUIRED)
-
-## PThread
-set(THREADS_PREFER_PTHREAD_FLAG ON)
-find_package(Threads REQUIRED)
 
 add_library(webcrown STATIC ${SOURCE_FILES})
