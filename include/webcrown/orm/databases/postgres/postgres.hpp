@@ -1,7 +1,6 @@
 #pragma once
 
-#include <bits/chrono.h>
-#include <bits/utility.h>
+
 #include <chrono>
 #include <cstdint>
 #include <cstdlib>
@@ -13,7 +12,6 @@
 #include <sstream>
 #include <stdio.h>
 #include <string>
-#include <refl.hpp>
 #include <algorithm>
 #include <iostream>
 #include <sys/types.h>
@@ -22,12 +20,17 @@
 #include <charconv>
 #include <ostream>
 
-
+#include <refl.hpp>
 #include <pqxx/pqxx>
-#include "date/date.h"
+#include <date/date.h>
 #include <date/tz.h>
+#include "enums.hpp"
 
-namespace easypqxx {
+#include "webcrown/common/date/date_time.hpp"
+#include "webcrown/common/meta/to_string.hpp"
+
+namespace webcrown {
+namespace orm {
 
 using std::string;
 using std::vector;
@@ -35,13 +38,6 @@ using std::vector;
 using ConnectionT = pqxx::connection;
 using day_point = 
     std::chrono::time_point<std::chrono::system_clock, date::days>;
-
-
-namespace details {
-
-
-} // namespace details
-
 
 struct Table : refl::attr::usage::type
 {
@@ -152,7 +148,7 @@ constexpr auto make_sql_field_spec(Member)
     {
         static_assert(column.length != -1 && "The length should be different than -1");
 
-        constexpr auto charlength = "char[" + REFL_MAKE_CONST_STRING(details::to_string<column.length>) + "]";
+        constexpr auto charlength = "char[" + REFL_MAKE_CONST_STRING(meta::to_string<column.length>) + "]";
 
         if constexpr (should_apply_custom_define)
             return REFL_MAKE_CONST_STRING(column.name) + " " + (charlength) + " " + REFL_MAKE_CONST_STRING(column.custom_definition_flags);
@@ -333,12 +329,12 @@ constexpr auto insert()
                 if constexpr (static_cast<bool>(column.attribute & ColumnFlags::ignore_insert))
                     return acc;
 
-                constexpr auto index = details::get_index_member(member, Td::members);
+                constexpr auto index = meta::get_index_member(member, Td::members);
 
                 if constexpr (ColumnFlags::primarykey == column.attribute)
                     return acc;
                 else
-                    return acc + ",\n\t $" + REFL_MAKE_CONST_STRING(details::to_string<index>);
+                    return acc + ",\n\t $" + REFL_MAKE_CONST_STRING(meta::to_string<index>);
             },
             make_const_string())
             .template substr<2>();
@@ -421,7 +417,6 @@ constexpr auto update()
 
 } // namespace query
 
-namespace orm {
 
 inline
 std::string normalize_type(int v)
@@ -902,6 +897,4 @@ bool update(string const& cond, ConnectionT& c, Args &&... args)
     return true;
 }
 
-} // namespace orm
-
-}
+}}

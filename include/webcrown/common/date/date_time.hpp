@@ -1,4 +1,8 @@
+#pragma once
+
 #include "date/date.h"
+
+namespace webcrown {
 
 class date_time
 {
@@ -45,7 +49,7 @@ public:
         return result;
     }
 
-    static date_time from_str(string const& s)
+    static date_time from_str(std::string const& s)
     {
         date::sys_time<std::chrono::nanoseconds> tp;
 
@@ -78,4 +82,6 @@ public:
 inline std::ostream& operator<<(std::ostream& os, date_time const dt)
 {
     return os << dt.str();
+}
+
 }

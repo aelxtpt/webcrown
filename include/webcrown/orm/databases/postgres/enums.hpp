@@ -1,4 +1,10 @@
+#pragma once
 
+#include <cstdint>
+#include <type_traits>
+
+namespace webcrown {
+namespace orm {
 
 enum class DataType
 {
@@ -50,3 +56,5 @@ constexpr ColumnFlags operator&(const ColumnFlags lhs, ColumnFlags rhs)
         static_cast<std::underlying_type_t<ColumnFlags>>(rhs)
     );
 }
+
+}}
