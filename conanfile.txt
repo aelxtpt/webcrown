@@ -1,0 +1,11 @@
+[requires]
+asio/1.24.0
+date/3.0.1
+nlohmann_json/3.11.2
+libpqxx/7.6.1
+refl-cpp/0.12.4
+spdlog/1.11.0
+
+[generators]
+CMakeDeps
+CMakeToolchain

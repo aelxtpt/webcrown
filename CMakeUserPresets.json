@@ -1,0 +1,9 @@
+{
+    "version": 4,
+    "vendor": {
+        "conan": {}
+    },
+    "include": [
+        "/home/aex/code/webcrown/build/CMakePresets.json"
+    ]
+}

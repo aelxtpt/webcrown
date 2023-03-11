@@ -15,11 +15,22 @@ set (CMAKE_CXX_FLAGS "-Werror=return-type")
 
 include_directories(${PROJECT_SOURCE_DIR}/include)
 
-include_directories(${PROJECT_SOURCE_DIR}/.deps/asio/asio/include)
-include_directories(${PROJECT_SOURCE_DIR}/.deps/date/include)
-include_directories(${PROJECT_SOURCE_DIR}/.deps/json/include)
-include_directories(${PROJECT_SOURCE_DIR}/.deps/spdlog/include)
-include_directories(${PROJECT_SOURCE_DIR}/.deps/reflcpp/include)
+find_package(refl-cpp REQUIRED)
+find_package(asio REQUIRED)
+find_package(date REQUIRED)
+find_package(libpqxx REQUIRED)
+find_package(nlohmann_json REQUIRED)
+
+find_package(spdlog REQUIRED)
+
+include_directories(${refl-cpp_INCLUDE_DIRS})
+include_directories(${asio_INCLUDE_DIRS})
+include_directories(${date_INCLUDE_DIRS})
+include_directories(${libpqxx_INCLUDE_DIRS})
+include_directories(${nlohmann_json_INCLUDE_DIRS})
+
+include_directories(${spdlog_INCLUDE_DIRS})
+
 
 file(GLOB_RECURSE
   SOURCE_FILES
@@ -39,7 +50,22 @@ endif()
 #add_subdirectory(examples/simple_route)
 
 if (ENABLE_EXAMPLES)
-  #add_subdirectory(examples/orm)
+  add_subdirectory(examples/orm)
 endif()
 
 add_library(webcrown STATIC ${SOURCE_FILES})
+
+
+# Generate headeronly spdlog
+# conan install . --output-folder=build --build=missing --options=spdlog/1.11.0:header_only=True
+
+
+# [settings]
+# arch=x86_64
+# build_type=Release
+# compiler=gcc
+# compiler.cppstd=gnu17
+# compiler.libcxx=libstdc++11
+# compiler.version=12
+# os=Linux
+# build_type=Debug    <<<< If your project is compiling with debug, probrably, without this line, conan will compile with RElease, so link errors will throw, because you link Release x debug..
