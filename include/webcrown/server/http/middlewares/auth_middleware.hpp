@@ -14,7 +14,8 @@ enum auth_authorization_level
 {
     none,
     guest,
-    owner
+    owner,
+    admin
 };
 
 struct auth_result

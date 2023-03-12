@@ -85,7 +85,7 @@ constexpr auto make_sql_field_spec(Member)
 
     constexpr bool should_apply_custom_define = ColumnFlags::none == column.attribute && REFL_MAKE_CONST_STRING(column.custom_definition_flags) != "";
 
-    if constexpr (ColumnFlags::primarykey == column.attribute && DataType::bigserial == column.data_type)
+    if constexpr (DataType::primarykey == column.data_type)
     {
         constexpr bool is_integral = std::is_integral_v<MT>;
         static_assert(is_integral && "Type should be an integral type like int");
@@ -286,7 +286,8 @@ constexpr auto insert()
             constexpr auto column = descriptor::get_attribute<Column>(member);
             if constexpr (
                 (static_cast<bool>(column.attribute & ColumnFlags::ignore_insert)) ||
-                (static_cast<bool>(column.attribute & ColumnFlags::primarykey))
+                (static_cast<bool>(column.attribute & ColumnFlags::primarykey) ||
+                (column.data_type == DataType::primarykey))
             )
             {
                 return acc;

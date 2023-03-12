@@ -8,6 +8,7 @@ namespace orm {
 
 enum class DataType
 {
+    primarykey, // bigserial with primary key
     bigint, // signed eight-byte integer
     bigserial, // autoincrementing eight-byte integer
     boolean, // logical boolean (true/false)
