@@ -26,9 +26,12 @@ class http_context
     unordered_map<context_name, context_value> _values;
 public:
 
-    void add_value(std::pair<context_name, context_value> v)
+    void add_value(std::pair<context_name, context_value> const& v)
     {
-        _values.insert(std::move(v));
+        if(_values.empty())
+            _values.insert(v);
+        else
+            _values[v.first] = v.second;
     }
 
     decltype(_values) values() const noexcept { return _values; }
