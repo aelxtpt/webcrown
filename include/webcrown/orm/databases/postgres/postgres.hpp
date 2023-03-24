@@ -796,7 +796,7 @@ constexpr void my_for_each(const std::tuple<Args...> &t, Func &&func)
 {
     if constexpr (I < sizeof...(Args))
     {
-        func(std::get<I>(t));
+        func(std::get<I>(t), I);
         my_for_each<I + 1>(t, std::forward<Func>(func));
     }
 }
@@ -853,7 +853,7 @@ bool update(string const& cond, ConnectionT& c, Args &&... args)
         };
 
     my_for_each(t, 
-        [&field_exists](auto &arg)
+        [&field_exists](auto &arg, size_t index)
         {
             auto field_name = std::get<0>(arg);
 
