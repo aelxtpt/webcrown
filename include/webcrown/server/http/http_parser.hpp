@@ -41,7 +41,8 @@ enum class content_type
     message,
     unknown,
     not_specified,
-    image_jpeg
+    image_jpeg,
+    application_form_urlencoded
 };
 
 //
@@ -196,6 +197,7 @@ parser::parse(const char* buffer, size_t size, std::error_code& ec)
    {
         if (header_content_type_ == content_type::text ||
                 header_content_type_ == content_type::application_json ||
+                header_content_type_ == content_type::application_form_urlencoded ||
                 header_content_type_ == content_type::not_specified)
         {
             std::string_view body;
@@ -286,6 +288,7 @@ parser::parse_start_line(char const*& it, char const* last, std::error_code& ec)
     if (header_content_type_ != content_type::application_json &&
         header_content_type_ != content_type::multipart_formdata &&
         header_content_type_ != content_type::not_specified &&
+        header_content_type_ != content_type::application_form_urlencoded &&
         header_content_type_ != content_type::image_jpeg)
     {
         ec = make_error(http_error::content_type_not_implemented);
@@ -348,6 +351,8 @@ parser::parse_content_type(content_type& content_type,
         content_type = content_type::application_json;
     else if(type == "image/jpeg")
         content_type = content_type::image_jpeg;
+    else if(type == "application/x-www-form-urlencoded")
+        content_type = content_type::application_form_urlencoded;
     else
         content_type = content_type::unknown;
 

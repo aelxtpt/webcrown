@@ -166,8 +166,11 @@ route::is_match_with_target_request(std::string_view target, http_method method)
         auto path_parameter_value = find_next_path_parameter_value(it, end);
         if (path_parameter_value)
         {
-            first->value.swap(*path_parameter_value);
+            first->value.swap(*path_parameter_value);   
 
+            // TODO: Corner case
+            // When the route has ambiguous parameter string, it will fail, example:
+            // This route contains ":user" in "users" /admin/users/edit/:user
             auto key_pos = full_path_binded.find(first->name);
             if(key_pos != std::string::npos)
             {

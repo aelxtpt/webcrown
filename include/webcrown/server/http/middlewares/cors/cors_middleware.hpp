@@ -37,7 +37,7 @@ public:
         {
             // request is not a CORS request but have origin header.
             // for example, use fetch api
-            return false;
+            return true;
         }
 
         // TODO: Apply some validations

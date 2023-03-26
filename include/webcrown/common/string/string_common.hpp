@@ -27,6 +27,7 @@ public:
  
     static std::string& upper(std::string& str);
 
+
 private:
     static char to_lower_internal(char ch);
     static char to_upper_internal(char ch);
