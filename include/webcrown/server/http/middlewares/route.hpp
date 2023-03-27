@@ -171,6 +171,9 @@ route::is_match_with_target_request(std::string_view target, http_method method)
             // TODO: Corner case
             // When the route has ambiguous parameter string, it will fail, example:
             // This route contains ":user" in "users" /admin/users/edit/:user
+            // Another case "/admin/models/:model_name", index_model_admin_detail
+            // "/admin/models/:model_name/:model_item_id", get_model_item_admin));
+            // "/admin/models/:model_name_p/add", index_admin_model_add));
             auto key_pos = full_path_binded.find(first->name);
             if(key_pos != std::string::npos)
             {
