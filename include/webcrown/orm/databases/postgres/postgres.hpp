@@ -57,13 +57,15 @@ struct Column : refl::attr::usage::field
     const ColumnFlags attribute;
     const char* custom_definition_flags;
     const int32_t length;
+    const bool is_admin_field_identifier;
 
-    constexpr Column(const char* name, DataType dataType, uint32_t length = -1, ColumnFlags attribute = ColumnFlags::none, const char* custom_definition_flags = "") noexcept
+    constexpr Column(const char* name, DataType dataType, uint32_t length = -1, ColumnFlags attribute = ColumnFlags::none, const char* custom_definition_flags = "", bool is_admin_field_identifier = false) noexcept
         : name(name)
         , data_type(dataType)
         , attribute(attribute)
         , custom_definition_flags(custom_definition_flags)
         , length(length)
+        , is_admin_field_identifier(is_admin_field_identifier)
     {}
 };
 
