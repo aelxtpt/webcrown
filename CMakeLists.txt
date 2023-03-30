@@ -39,6 +39,20 @@ file(GLOB_RECURSE
     ${PROJECT_SOURCE_DIR}/include/*.cpp
 )
 
+
+file(GLOB_RECURSE 
+        STATIC_FILES
+        ${PROJECT_SOURCE_DIR}/include/webcrown/admin/static/*
+)
+
+foreach(file ${STATIC_FILES}) 
+    get_filename_component(filename ${file} NAME)
+    get_filename_component(dir ${file} DIRECTORY)
+    string(REPLACE "${PROJECT_SOURCE_DIR}/include/webcrown/admin/static/" "" dir ${dir})
+    configure_file(${file} ${CMAKE_BINARY_DIR}/bin/static/${dir}/${filename} COPYONLY)
+endforeach()
+
+
 # submodules
 #add_subdirectory(submodules/googletest)
 

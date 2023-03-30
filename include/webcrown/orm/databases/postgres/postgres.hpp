@@ -1,6 +1,7 @@
 #pragma once
 
 
+#include <boost/lexical_cast.hpp>
 #include <chrono>
 #include <cstdint>
 #include <cstdlib>
@@ -885,6 +886,50 @@ bool update(string const& cond, ConnectionT& c, Args &&... args)
                     res +
                     ",";
             }
+        });
+    
+    update_sql = update_sql.substr(0, update_sql.size() -1);
+    update_sql += " " + cond;
+
+    std::cout << update_sql << "\n";
+
+    pqxx::work w(c);
+
+    pqxx::result res = w.exec0(update_sql);
+    w.commit();
+    
+    return true;
+}
+
+template<typename T, typename... Args>
+bool update(string const& cond, ConnectionT& c, std::unordered_map<string, string> const& data)
+{
+    using namespace refl;
+    using Td = type_descriptor<T>;
+
+    static_assert(descriptor::has_attribute<Table>(Td{}));
+
+    string update_sql = query::update<T>().str();
+    
+    util::for_each(
+        Td::members,
+        [&data, &update_sql](auto member, auto index)
+        {
+            using MT = typename decltype(member)::value_type;
+            constexpr auto column = descriptor::get_attribute<Column>(member);
+            const char* field_name = refl::descriptor::get_display_name(member);
+
+            auto member_it = data.find(field_name);
+            if(member_it == data.end())
+                return;
+            
+            auto v = boost::lexical_cast<MT>(member_it->second);
+
+            update_sql += "\n\t" + 
+                    REFL_MAKE_CONST_STRING(column.name).str() +
+                    "=" +
+                    normalize_type(v) +
+                    ",";
         });
     
     update_sql = update_sql.substr(0, update_sql.size() -1);

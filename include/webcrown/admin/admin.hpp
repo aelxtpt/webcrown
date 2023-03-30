@@ -2,8 +2,9 @@
 
 #include <refl.hpp>
 #include <bits/utility.h>
-#include <boost/algorithm/string/trim.hpp>
-#include <boost/url/url_view.hpp>
+#include <boost/algorithm/string.hpp>
+#include <webcrown/common/url_parser.hpp>
+
 #include <cstddef>
 #include <iterator>
 #include <memory>
@@ -18,10 +19,11 @@
 #include <boost/lexical_cast.hpp>
 
 #include <fmt/format.h>
-#include "boost/mp11/detail/mp_with_index.hpp"
 #include "database/connection.hpp"
 #include "webcrown/admin/user_model.hpp"
 #include "refl.hpp"
+
+#include "webcrown/admin/adm_structs.hpp"
 #include "webcrown/security/password_hashing.hpp"
 #include "webcrown/serializer/serializator.hpp"
 #include "webcrown/orm/databases/postgres/enums.hpp"
@@ -32,7 +34,6 @@
 #include "webcrown/helpers/endpoint_context.hpp"
 
 #include "inja/inja.hpp"
-#include <boost/mp11.hpp>
 
 namespace webcrown {
 namespace admin {
@@ -257,14 +258,28 @@ public:
                 std::string s = request.body();
                 boost::algorithm::trim(s);
 
+                auto final_s = urlhelper::URLDecode(s);
+
                 std::map<std::string, std::string> user_data;
 
-                boost::urls::url_view u(fmt::format("http://xpto.com/q?{}", s));
-                urls::params_view params_ref = u.params();
-                for(auto param : params_ref)
+                std::vector<std::string> key_values;
+                boost::split(key_values, final_s, boost::is_any_of("&"));
+
+                for(auto const& item : key_values)
                 {
-                    std::cout << param.key << " = " << param.value << "\n";
-                    user_data.insert(make_pair(param.key, param.value));
+                    std::vector<std::string> key_value;
+                    boost::split(key_value, item, boost::is_any_of("="));
+                    if(key_value.size() == 2)
+                    {
+                        std::string key = key_value[0];
+                        std::string value = key_value[1];
+                        boost::algorithm::trim(key);
+                        boost::algorithm::trim(value);
+
+                        std::cout << key << " = " << value << std::endl;
+
+                        user_data.insert(make_pair(key, value));
+                    }
                 }
 
                 if(!user_data.contains("user_is_active"))
@@ -321,7 +336,7 @@ public:
                 env.include_template("sidebar", sidebar);
                 Template temp = env.parse_template("static/templates/admin/user_add.html");
 
-                auto users_data = this->get_serialized("Users");
+                auto users_data = this->many_serialized("Users");
 
                 std::cout << users_data.dump() << "\n";
 
@@ -377,12 +392,26 @@ public:
 
                 std::map<std::string, std::string> user_data;
 
-                boost::urls::url_view u(fmt::format("http://xpto.com/q?{}", s));
-                urls::params_view params_ref = u.params();
-                for(auto param : params_ref)
+                auto final_s = urlhelper::URLDecode(s);
+
+                std::vector<std::string> key_values;
+                boost::split(key_values, final_s, boost::is_any_of("&"));
+
+                for(auto const& item : key_values)
                 {
-                    std::cout << param.key << " = " << param.value << "\n";
-                    user_data.insert(make_pair(param.key, param.value));
+                    std::vector<std::string> key_value;
+                    boost::split(key_value, item, boost::is_any_of("="));
+                    if(key_value.size() == 2)
+                    {
+                        std::string key = key_value[0];
+                        std::string value = key_value[1];
+                        boost::algorithm::trim(key);
+                        boost::algorithm::trim(value);
+
+                        std::cout << key << " = " << value << std::endl;
+
+                        user_data.insert(make_pair(key, value));
+                    }
                 }
 
                 if(!user_data.contains("user_is_active"))
@@ -587,12 +616,12 @@ public:
                 env.include_template("sidebar", sidebar);
                 Template temp = env.parse_template("static/templates/admin/model_detail.html");
 
-                auto model_serialized = this->get_serialized(model_name_p->value);
+                auto model_serialized = this->many_serialized(model_name_p->value);
                 json data;
                 data["model_list"] = model_serialized;
                 data["model_name"] = model_name_p->value;
 
-                std::cout << model_serialized.dump() << "\n";
+                std::cout << "Result serialized " << model_serialized.dump() << "\n";
 
                 html = env.render(temp, data);
 
@@ -621,6 +650,9 @@ public:
             }
 
             std::string html;
+            bool model_was_registered_with_success = false;
+            bool model_was_registered_with_fail = false;
+            std::string model_register_fail_reason;
 
             if(request.method() == http_method::post)
             {
@@ -633,18 +665,36 @@ public:
 
                 std::map<std::string, std::string> user_data;
 
-                boost::urls::url_view u(fmt::format("http://xpto.com/q?{}", s));
-                urls::params_view params_ref = u.params();
-                for(auto param : params_ref)
+                auto final_s = urlhelper::URLDecode(s);
+
+                std::vector<std::string> key_values;
+                boost::split(key_values, final_s, boost::is_any_of("&"));
+
+                for(auto const& item : key_values)
                 {
-                    std::cout << param.key << " = " << param.value << "\n";
-                    user_data.insert(make_pair(param.key, param.value));
+                    std::vector<std::string> key_value;
+                    boost::split(key_value, item, boost::is_any_of("="));
+                    if(key_value.size() == 2)
+                    {
+                        std::string key = key_value[0];
+                        std::string value = key_value[1];
+                        boost::algorithm::trim(key);
+                        boost::algorithm::trim(value);
+
+                        std::cout << key << " = " << value << std::endl;
+
+                        user_data.insert(make_pair(key, value));
+                    }
                 }
 
                 if(!this->insert_model(user_data, model_name_p->value))
                 {
                     std::cout << "Failed to insert model\n";
+                    model_was_registered_with_fail = true;
+                    model_register_fail_reason = "Failed to insert model";
                 }
+                else
+                    model_was_registered_with_success = true;
             }    
 
             auto x = this->get_typed_serialized(model_name_p->value);
@@ -659,6 +709,9 @@ public:
             json data;
             data["fields"] = x;
             data["model_name"] = model_name_p->value;
+            data["model_was_registered_with_success"] = model_was_registered_with_success;
+            data["model_was_registered_with_fail"] = model_was_registered_with_fail;
+            data["model_register_fail_reason"] = model_register_fail_reason;
 
             html = env.render(temp, data);
 
@@ -689,6 +742,9 @@ public:
             }
 
             std::string html;
+            bool model_was_edited_with_success = false;
+            bool model_was_edited_with_fail = false;
+            std::string model_edit_fail_reason;
 
             if(request.method() == http_method::post)
             {
@@ -699,17 +755,37 @@ public:
                 std::string s = request.body();
                 boost::algorithm::trim(s);
 
-                std::map<std::string, std::string> user_data;
+                std::unordered_map<std::string, std::string> model_data;
 
-                boost::urls::url_view u(fmt::format("http://xpto.com/q?{}", s));
-                urls::params_view params_ref = u.params();
-                for(auto param : params_ref)
+                auto final_s = urlhelper::URLDecode(s);
+
+                std::vector<std::string> key_values;
+                boost::split(key_values, final_s, boost::is_any_of("&"));
+
+                for(auto const& item : key_values)
                 {
-                    std::cout << param.key << " = " << param.value << "\n";
-                    user_data.insert(make_pair(param.key, param.value));
+                    std::vector<std::string> key_value;
+                    boost::split(key_value, item, boost::is_any_of("="));
+                    if(key_value.size() == 2)
+                    {
+                        std::string key = key_value[0];
+                        std::string value = key_value[1];
+                        boost::algorithm::trim(key);
+                        boost::algorithm::trim(value);
+
+                        std::cout << key << " = " << value << std::endl;
+
+                        model_data.insert(make_pair(key, value));
+                    }
                 }
 
-                
+                if(!this->update_model(model_name_p->value, model_data, model_name_pk->value))
+                {
+                    model_was_edited_with_fail = true;
+                    model_edit_fail_reason = "Failed to update model";
+                }
+                else
+                    model_was_edited_with_success = true;
             }
             else if(request.method() == http_method::delete_)
             {
@@ -732,6 +808,9 @@ public:
             json data;
             data["model"] = x;
             data["model_name"] = model_name_p->value;
+            data["model_was_edited_with_success"] = model_was_edited_with_success;
+            data["model_was_edited_with_fail"] = model_was_edited_with_fail;
+            data["model_edit_fail_reason"] = model_edit_fail_reason;
 
             html = env.render(temp, data);
 
@@ -751,6 +830,7 @@ public:
         routes_.push_back(make_shared<route>(http_method::get, "/admin/models_add/:model_name_p", index_admin_model_add));
         routes_.push_back(make_shared<route>(http_method::post, "/admin/models_add/:model_name_p", index_admin_model_add));
         routes_.push_back(make_shared<route>(http_method::get, "/admin/models_edit/:model_name_p/:model_item_id_pk", index_admin_model_edit));
+        routes_.push_back(make_shared<route>(http_method::post, "/admin/models_edit/:model_name_p/:model_item_id_pk", index_admin_model_edit));
         routes_.push_back(make_shared<route>(http_method::delete_, "/admin/models_delete/:model_name_p/:model_item_id_pk", index_admin_model_edit));
     }
 
@@ -825,7 +905,7 @@ private:
         return data;
     }
 
-    nlohmann::json get_serialized(std::string const& model_name)
+    nlohmann::json many_serialized(std::string const& model_name)
     {
         using nlohmann::json;
         using namespace refl;
@@ -848,8 +928,6 @@ private:
                 auto ut = std::any_cast<decltype(arg)>(arg);
                 auto res = make_vector_t(ut);
 
-                std::vector<ModelData> result;
-
                 // bem porco
                 for(auto const& item : res)
                 {
@@ -868,13 +946,24 @@ private:
                         item_fields.push_back(ModelDataField(field_name, field_type, field_value, is_admin_field_identifier));
                     });
 
-                    //result.push_back(ModelData(model_name, item_fields));
-                }
+                    json obj;
+                    auto fields = serialize_admin(item_fields);
 
-                data = serialize_admin(result);
+                    obj["model_name"] = model_name;
+                    obj["fields"] = fields;;
+
+                    data.push_back(obj);
+                }
             }
 
         });
+
+        if(data.is_null())
+        {
+            data = json::array_t();
+            //data["model_name"] = model_name;
+            //data["fields"] = serialize_admin(std::vector<ModelDataField>{});
+        }
 
         return data;
     }
@@ -902,14 +991,13 @@ private:
             {
                 auto ut = std::any_cast<decltype(arg)>(arg);
                 
-
                 ModelData result{};
 
                 // bem porco
 
                 std::string pk_name;
                 
-                struct_of_arrays<ModelDataField> item_fields;
+                std::vector<ModelDataField> item_fields;
                 util::for_each(Td::members,
                 [&item_fields, &model_name, &pk_name](auto member, auto index)
                 {
@@ -943,9 +1031,10 @@ private:
                     item_fields.push_back(ModelDataField(field_name, field_type, field_value, is_admin_field_identifier));
                 });
 
-                result = ModelData(model_name, item_fields);
+                auto fields = serialize_admin(item_fields);
 
-                data = serialize_admin(result);
+                data["model_name"] = model_name;
+                data["fields"] = fields;
             }
 
         });
@@ -996,8 +1085,7 @@ private:
         using webcrown::orm::ColumnFlags;
 
         auto type_finded = get_type(model_name);
-        //std::vector<ModelDescriptionItem> field_mapped;
-        std::vector<int> field_mapped;
+        std::vector<ModelDescriptionItem> field_mapped;
 
         orm::my_for_each(t,
         [&type_finded, &field_mapped](auto arg, size_t index)
@@ -1028,49 +1116,49 @@ private:
                         constexpr bool is_integral = std::is_integral_v<MT>;
                         static_assert(is_integral && "Type should be an integral type like int");
 
-                        //field_mapped.push_back(ModelDescriptionItem{column.name, "integer"});
+                        field_mapped.push_back(ModelDescriptionItem{column.name, "integer"});
                     }
                     else if constexpr (DataType::text == column.data_type)
                     {
                         constexpr bool is_text = std::is_same_v<MT, std::string> || std::is_same_v<MT, const char*>;
                         static_assert(is_text && "Type should be a text type like std::string, const char*");
 
-                        //field_mapped.push_back(ModelDescriptionItem{column.name, "text"});
+                        field_mapped.push_back(ModelDescriptionItem{column.name, "text"});
                     }
                     else if constexpr (DataType::boolean == column.data_type)
                     {
                         constexpr bool is_bool = std::is_same_v<MT, bool>;
                         static_assert(is_bool && "Type should be boolean");
 
-                        //field_mapped.push_back(ModelDescriptionItem{column.name, "boolean"});
+                        field_mapped.push_back(ModelDescriptionItem{column.name, "boolean"});
                     }
                     else if constexpr (DataType::date == column.data_type)
                     {
                         constexpr auto is_date = std::is_same_v<MT, date::year_month_day>;
                         static_assert(is_date && "Type should be a date");
 
-                        //field_mapped.push_back(ModelDescriptionItem{column.name, "date"});
+                        field_mapped.push_back(ModelDescriptionItem{column.name, "date"});
                     }
                     else if constexpr (DataType::decimal == column.data_type)
                     {
                         constexpr auto is_decimal = std::is_floating_point_v<MT>;
                         static_assert(is_decimal && "Type should be a floating pointer");
 
-                        //field_mapped.push_back(ModelDescriptionItem{column.name, "decimal"});
+                        field_mapped.push_back(ModelDescriptionItem{column.name, "decimal"});
                     }
                     else if constexpr (DataType::timestamp == column.data_type)
                     {
                         constexpr auto is_timestamp = std::is_same_v<MT, date_time>;
                         static_assert (is_timestamp && "Type should be date_time");
 
-                        //field_mapped.push_back(ModelDescriptionItem{column.name, "timestamp"});
+                        field_mapped.push_back(ModelDescriptionItem{column.name, "timestamp"});
                     }
                     else if constexpr (DataType::time == column.data_type)
                     {
                         constexpr auto is_time = std::is_same_v<MT, date::time_of_day<std::chrono::seconds>>;
                         static_assert (is_time && "Type should be date::time_of_day<std::chrono::seconds>");
 
-                        //field_mapped.push_back(ModelDescriptionItem{column.name, "time"});
+                        field_mapped.push_back(ModelDescriptionItem{column.name, "time"});
                     }
                 });
 
@@ -1168,6 +1256,54 @@ private:
                 result = mdelete_(
                     ut,
                     fmt::format("WHERE {} = '{}'", pk_name, pk_value));
+            }
+        });
+
+        return result;
+    }
+
+    bool update_model(std::string const& model_name, std::unordered_map<std::string, std::string> const& data, std::string const& pk_value)
+    {
+        using namespace refl;
+        using std::string;
+        using std::unordered_map;
+
+        auto type_finded = get_type(model_name);
+
+        auto update_ = [&]<typename T>(T arg, string const& pk_name) -> bool
+        {
+            return orm::update<T>(
+                fmt::format("WHERE {} = '{}'", pk_name, pk_value),
+                *database::global_connection->connection_ptr(),
+                data
+            );
+        };
+
+        bool result{};
+
+        orm::my_for_each(t,
+        [&type_finded, &result, &update_](auto arg, size_t index)
+        {
+            using Td = type_descriptor<decltype(arg)>;
+
+            if(type_finded.type() == typeid(arg))
+            {
+                auto ut = std::any_cast<decltype(arg)>(arg);
+
+                string pk_name;
+                util::for_each(Td::members,
+                [&pk_name](auto member, auto index)
+                {
+                    constexpr auto column = descriptor::get_attribute<orm::Column>(decltype(member){});
+                    using MT = typename decltype(member)::value_type;
+
+                    if constexpr (orm::DataType::primarykey ==  column.data_type)
+                    {
+                        pk_name = column.name;
+                    }
+                });
+
+                result = update_(ut, pk_name);
             }
         });
 

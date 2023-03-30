@@ -1,6 +1,7 @@
 #pragma once
 
 
+#include "webcrown/admin/adm_structs.hpp"
 #include <webcrown/orm/orm.hpp>
 #include <exception>
 #include <refl.hpp>
@@ -139,6 +140,7 @@ nlohmann::json serialize(T obj)
 }
 
 template<typename T>
+inline
 nlohmann::json serialize(std::vector<T> const& obj)
 {
     using json = nlohmann::json;
@@ -214,7 +216,8 @@ nlohmann::json serialize_admin(T obj)
 }
 
 template<typename T>
-nlohmann::json serialize_admin(std::vector<T> const& obj)
+inline
+nlohmann::json serialize_admin(std::vector<T> obj)
 {
     using json = nlohmann::json;
     json result{};
@@ -223,7 +226,7 @@ nlohmann::json serialize_admin(std::vector<T> const& obj)
     {
         json data = json::array();
 
-        for(auto const& o : obj)
+        for(auto o : obj)
         {
             auto r = serialize_admin(o);
             data.push_back(r);
