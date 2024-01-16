@@ -1,0 +1,128 @@
+<!doctype html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body>
+
+    {% include "sidebar" %}
+
+    <div class="p-4 sm:ml-64">
+        <div class="p-4 border-2 border-gray-200 border-dashed rounded-lg dark:border-gray-700 mt-14">
+
+            <div class="grid grid-cols-2 gap-4 mb-4">
+
+                <!-- content -->
+
+                <div class="relative flex flex-col min-w-0 break-words bg-white w-full mb-6 shadow-lg rounded ">
+                    <div class="rounded-t mb-0 px-4 py-3 border-0">
+                        <div class="flex flex-wrap items-center">
+                            <div class="relative w-full px-4 max-w-full flex-grow flex-1">
+                                <h3 class="font-semibold text-base text-blueGray-700">Models</h3>
+                            </div>
+
+                        </div>
+                    </div>
+
+                    <div class="block w-full overflow-x-auto">
+
+
+                        <div class="relative overflow-x-auto">
+                            <table class="w-full text-sm text-left text-gray-500 dark:text-gray-400">
+                                <thead
+                                    class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
+                                    <tr>
+                                        <th scope="col" class="px-6 py-3">
+                                            #
+                                        </th>
+                                 
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for model in models %}
+                                    <tr class="bg-white border-b dark:bg-gray-800 dark:border-gray-700">
+                                        <th scope="row"
+                                            class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white">
+                                            <a href="/admin/models/{{model}}">{{ model }}</a>
+                                        </th>
+                                  
+                                    </tr>
+                                    {% endfor %}
+                       
+                                </tbody>
+                            </table>
+                        </div>
+
+
+
+                        <ol class="flex gap-1 text-xs font-medium" style="padding: 20px">
+                            <li>
+                                <a href="#"
+                                    class="inline-flex h-8 w-8 items-center justify-center rounded border border-gray-100">
+                                    <span class="sr-only">Prev Page</span>
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" viewBox="0 0 20 20"
+                                        fill="currentColor">
+                                        <path fill-rule="evenodd"
+                                            d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z"
+                                            clip-rule="evenodd" />
+                                    </svg>
+                                </a>
+                            </li>
+
+                            <li>
+                                <a href="#" class="block h-8 w-8 rounded border border-gray-100 text-center leading-8">
+                                    1
+                                </a>
+                            </li>
+
+                            <li
+                                class="block h-8 w-8 rounded border-blue-600 bg-blue-600 text-center leading-8 text-white">
+                                2
+                            </li>
+
+                            <li>
+                                <a href="#" class="block h-8 w-8 rounded border border-gray-100 text-center leading-8">
+                                    3
+                                </a>
+                            </li>
+
+                            <li>
+                                <a href="#" class="block h-8 w-8 rounded border border-gray-100 text-center leading-8">
+                                    4
+                                </a>
+                            </li>
+
+                            <li>
+                                <a href="#"
+                                    class="inline-flex h-8 w-8 items-center justify-center rounded border border-gray-100">
+                                    <span class="sr-only">Next Page</span>
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" viewBox="0 0 20 20"
+                                        fill="currentColor">
+                                        <path fill-rule="evenodd"
+                                            d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z"
+                                            clip-rule="evenodd" />
+                                    </svg>
+                                </a>
+                            </li>
+                        </ol>
+
+
+                    </div>
+                </div>
+
+
+
+
+            </div>
+
+
+        </div>
+    </div>
+
+</body>
+
+</html>
