@@ -22,7 +22,6 @@ find_package(libpqxx REQUIRED)
 find_package(nlohmann_json REQUIRED)
 find_package(argon2 REQUIRED)
 
-find_package(spdlog REQUIRED)
 
 include_directories(${refl-cpp_INCLUDE_DIRS})
 include_directories(${asio_INCLUDE_DIRS})
@@ -31,7 +30,6 @@ include_directories(${libpqxx_INCLUDE_DIRS})
 include_directories(${nlohmann_json_INCLUDE_DIRS})
 include_directories(${argon2_INCLUDE_DIRS})
 
-include_directories(${spdlog_INCLUDE_DIRS})
 
 
 file(GLOB_RECURSE

@@ -10,7 +10,8 @@ enum class server_error : uint8_t
 {
     unknown = 0,
 	server_already_started,
-    server_not_started
+    server_not_started,
+    create_endpoint_fail
 };
 
 enum class service_error : uint8_t
@@ -24,7 +25,8 @@ enum class session_error : uint8_t
 {
     unknown = 0,
     sent_bytes_is_zero,
-    sent_buffer_is_nullptr
+    sent_buffer_is_nullptr,
+    not_connected
 };
 
 class server_error_category : public std::error_category

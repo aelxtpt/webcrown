@@ -52,7 +52,7 @@ public:
     auth_middleware& operator=(auth_middleware const&) = delete;
     auth_middleware& operator=(auth_middleware&&) = delete;
 
-    bool execute(http_request const &request, http_response &response, std::shared_ptr<spdlog::logger> logger) override
+    bool execute(http_request const &request, http_response &response) override
     {
         auto forbidden_error = [&response, this]()
         {
@@ -112,8 +112,6 @@ public:
         }
         catch(std::exception const& ex)
         {
-            SPDLOG_LOGGER_DEBUG(logger, "webcrown::auth_middleware::on_setup Error: {}",
-                                ex.what());
 
             response.set_status(http_status::internal_server_error);
             return false;

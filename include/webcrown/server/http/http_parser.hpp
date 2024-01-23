@@ -15,7 +15,6 @@
 #include "webcrown/server/http/http_request.hpp"
 #include "webcrown/server/http/http_response.hpp"
 #include "webcrown/server/http/http_method.hpp"
-#include <spdlog/spdlog.h>
 #include <fstream>
 
 #include <stdlib.h>
@@ -79,14 +78,12 @@ class parser
     std::size_t boundary_value_length_;
     std::string boundary_value_;
     std::unordered_map<std::string, std::string> upload_body_headers_;
-    std::shared_ptr<spdlog::logger> logger_;
 public:
-    explicit parser(std::shared_ptr<spdlog::logger> logger)
+    explicit parser()
         : parse_phase_(parse_phase::not_started)
         , protocol_version_(0)
         , buffer_size_readed_(0)
         , boundary_value_length_(0)
-        , logger_(logger)
     {
         multipart_buffer_ = std::make_shared<std::vector<std::byte>>();
     }
@@ -180,8 +177,6 @@ parser::parse(const char* buffer, size_t size, std::error_code& ec)
             auto no_body = it + 4 >= last;
             if (content_length > 0 && no_body)
             {
-                SPDLOG_LOGGER_DEBUG(logger_,
-                                    "webcrown::http_parser content_length is greather than zero but we not received the body.");
                 parse_phase_ = parse_phase::parse_body_pending;
 
                 return std::nullopt;
@@ -288,7 +283,6 @@ parser::parse_start_line(char const*& it, char const* last, std::error_code& ec)
         header_content_type_ != content_type::image_jpeg)
     {
         ec = make_error(http_error::content_type_not_implemented);
-        SPDLOG_LOGGER_DEBUG(logger_, "webcronw::http_parser Content-type is not implemented");
         return;
     }
 
@@ -352,7 +346,6 @@ parser::parse_content_type(content_type& content_type,
     else
         content_type = content_type::unknown;
 
-    SPDLOG_LOGGER_DEBUG(logger_, "webcrown::http_parser content_type is: {}", type);
 
     parse_phase_ = parse_phase::parse_content_type_finished;
 }
@@ -402,14 +395,9 @@ parser::parse_media_type(
     {
         parse_phase_ = parse_phase::parse_media_type;
 
-        SPDLOG_LOGGER_DEBUG(logger_,
-                            "webcrown::http_parser parsing media type.");
-
         auto content_type_h = headers.find("content-type");
         if (content_type_h == headers.end())
         {
-            SPDLOG_LOGGER_DEBUG(logger_,
-                                "webcrown::http_parser Content-Type header not found.");
             return;
         }
 
@@ -434,8 +422,6 @@ parser::parse_media_type(
         auto boundary_pos = content_type_h->second.find("boundary=");
         if (boundary_pos == std::string::npos)
         {
-            SPDLOG_LOGGER_DEBUG(logger_,
-                                "webcrown::http_parser boundary not found.");
             ec = make_error(http_error::no_boundary_header_for_multipart);
             return;
         }
@@ -447,50 +433,34 @@ parser::parse_media_type(
 
         if (*boundary_v_it++ != 'b')
         {
-            SPDLOG_LOGGER_DEBUG(logger_,
-                                "webcrown::http_parser no boundary value exists.");
             return;
         }
         if (*boundary_v_it++ != 'o')
         {
-            SPDLOG_LOGGER_DEBUG(logger_,
-                                "webcrown::http_parser no boundary value exists.");
             return;
         }
         if (*boundary_v_it++ != 'u')
         {
-            SPDLOG_LOGGER_DEBUG(logger_,
-                                "webcrown::http_parser no boundary value exists.");
             return;
         }
         if (*boundary_v_it++ != 'n')
         {
-            SPDLOG_LOGGER_DEBUG(logger_,
-                                "webcrown::http_parser no boundary value exists.");
             return;
         }
         if (*boundary_v_it++ != 'd')
         {
-            SPDLOG_LOGGER_DEBUG(logger_,
-                                "webcrown::http_parser no boundary value exists.");
             return;
         }
         if (*boundary_v_it++ != 'a')
         {
-            SPDLOG_LOGGER_DEBUG(logger_,
-                                "webcrown::http_parser no boundary value exists.");
             return;
         }
         if (*boundary_v_it++ != 'r')
         {
-            SPDLOG_LOGGER_DEBUG(logger_,
-                                "webcrown::http_parser no boundary value exists.");
             return;
         }
         if (*boundary_v_it++ != 'y')
         {
-            SPDLOG_LOGGER_DEBUG(logger_,
-                                "webcrown::http_parser no boundary value exists.");
             return;
         }
 
@@ -507,8 +477,6 @@ parser::parse_media_type(
         // Consume CRLF
         if (it + 4 > last)
         {
-            SPDLOG_LOGGER_DEBUG(logger_,
-                                "webcrown::http_parser No body for multipart");
             return;
         }
 
@@ -548,8 +516,6 @@ parser::parse_media_type(
                it[2] == '\r' &&
                it[3] == '\n')
             {
-                SPDLOG_LOGGER_DEBUG(logger_,
-                                    "webcrown::http_parser The epilogue boundary was reached.");
                 return;
             }
 
@@ -564,8 +530,6 @@ parser::parse_media_type(
 
         if (boundary_value_at_line != boundary_value_)
         {
-            SPDLOG_LOGGER_DEBUG(logger_,
-                                "webcrown::http_parser Error on compare boundary value");
             return;
         }
 
@@ -580,8 +544,6 @@ parser::parse_media_type(
         auto content_type_h_body = body_headers.find("content-type");
         if (content_type_h_body == body_headers.end())
         {
-            SPDLOG_LOGGER_DEBUG(logger_,
-                                "webcrown::http_parser No content-type on body");
             return;
         }
 
@@ -601,8 +563,6 @@ parser::parse_media_type(
         auto content_length_h = headers.find("content-length");
         if (content_length_h == headers.end())
         {
-            SPDLOG_LOGGER_DEBUG(logger_,
-                                "webcrown::http_parser Content-length not found");
             return;
         }
 
@@ -625,8 +585,6 @@ parser::parse_media_type(
 
                 if (it + 2 > last)
                 {
-                    SPDLOG_LOGGER_DEBUG(logger_,
-                                        "webcrown::http_parser End of stream");
                     continue;
                 }
 
