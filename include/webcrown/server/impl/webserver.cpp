@@ -58,15 +58,19 @@ WebSession::disconnect(asio::error_code ec)
 {
     auto shutdown_session = [this]()
     {
+        asio::error_code ec;
         // Indicates that this session will no more receives data
-        socket_.shutdown(asio::socket_base::shutdown_receive);
+        socket_.shutdown(asio::socket_base::shutdown_receive, ec);
+        if(ec)
+            on_error_(ec);
+
         socket_.close();
     };
 
     if(!connected_)
     {
         ec = make_error(server_error::server_not_started);
-        // on_error(ec);
+        on_error_(ec);
         shutdown_session();
         return false;
     }
@@ -309,7 +313,8 @@ WebSession::try_send()
 
     // Async write with the write handler
     sending_ = true;
-    auto async_write_handler = [this](std::error_code ec, size_t size)
+    auto self = shared_from_this();
+    auto async_write_handler = [this, self](std::error_code ec, size_t size)
     {
         sending_ = false;
 
@@ -468,7 +473,7 @@ WebServer::accept()
             register_session(session);
             session->connect();
 
-            auto disconnect_session = [session_id, session]()
+            auto disconnect_session = [session_id, session](asio::error_code ec)
             {
                 if(!session->is_connected())
                     return;

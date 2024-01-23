@@ -17,7 +17,7 @@ using std::atomic;
 
 class WebServer;
 
-class WebSession
+class WebSession : public std::enable_shared_from_this<WebSession>
 {
     using OnCb = std::function<void(asio::error_code ec)>;
 
