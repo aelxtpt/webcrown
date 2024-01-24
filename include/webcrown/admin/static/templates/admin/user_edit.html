@@ -14,7 +14,7 @@
     <div class="p-4 sm:ml-64">
         <div class="p-4 rounded-lg dark:border-gray-700 mt-14">
 
-            <div class="grid grid-cols-2 mb-4">
+            <div class="grid mb-4">
                 <div class="p-8 rounded border border-gray-200">
 
                     {% if user_was_edited_with_success or user_was_edited_with_fail %}
@@ -112,22 +112,28 @@
                             <div>
                                 <div class="inline-flex items-center">
                                     <input type="checkbox" name="user_is_active" class="form-checkbox" {% if user.user_active %} checked {% endif %}/>
-                                    <label for="user_is_active" class="ml-2">User active</label>
+                                    <label for="user_is_active" class="ml-2">User active</label> 
                                 </div>
+                                <p class="mt-1 max-w-2xl text-sm leading-6 text-gray-500">Designates whether this user should be treated as active. Unselect this instead of deleting accounts.</p>
                             </div>
 
                             <div>
                                 <div class="inline-flex items-center">
                                     <input type="checkbox" name="user_is_staff_status" class="form-checkbox" {% if user.user_staff_status %} checked {% endif %}/>
-                                    <label for="user_is_staff_status" class="ml-2">User Staff status</label>
+                                    <label for="user_is_staff_status" class="ml-2">User Staff status</label> 
                                 </div>
+                                <p class="mt-1 max-w-2xl text-sm leading-6 text-gray-500">Designates whether the user can log into this admin site</p>
+                                    
                             </div>
 
                             <div>
-                                <div class="inline-flex items-center">
+                                <div class="nline-flex items-center">
                                     <input type="checkbox" name="user_is_superuser_status" class="form-checkbox" {% if user.user_superuser_status %} checked {% endif %}/>
                                     <label for="user_is_superuser_status" class="ml-2">Superuser status</label>
                                 </div>
+                                <p class="mt-1 max-w-2xl text-sm leading-6 text-gray-500">Designates that this user has all permissions without explicitly assigning them.</p>
+                                
+                                
                             </div>
 
                         </div>
