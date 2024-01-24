@@ -1,7 +1,7 @@
 #pragma once
 
+#include <filesystem>
 #include <refl.hpp>
-#include <bits/utility.h>
 #include <boost/algorithm/string.hpp>
 #include <webcrown/common/url_parser.hpp>
 
@@ -19,7 +19,7 @@
 #include <boost/lexical_cast.hpp>
 
 #include <fmt/format.h>
-#include "database/connection.hpp"
+
 #include "webcrown/admin/user_model.hpp"
 #include "refl.hpp"
 
@@ -32,6 +32,7 @@
 #include "webcrown/server/http/middlewares/auth_middleware.hpp"
 #include "webcrown/server/http/middlewares/route.hpp"
 #include "webcrown/helpers/endpoint_context.hpp"
+#include "webcrown/admin/user_model.hpp"
 
 #include "inja/inja.hpp"
 
@@ -46,6 +47,35 @@ using namespace refl;
 using std::shared_ptr;
 using std::make_shared;
 
+static const std::string CONNECTION_STRING = "host=127.0.0.1 port=5432 dbname=bugbird connect_timeout=10 user=postgres password=Xpto@12";
+
+class ConnectionGuard
+{
+    shared_ptr<pqxx::connection> connection_;
+public:
+    static __attribute__((no_sanitize("address"))) ConnectionGuard& instance()
+    {
+        static ConnectionGuard instance;
+
+        return instance;
+    }
+
+    ConnectionGuard()
+    {
+        try
+        {
+            connection_ = make_shared<pqxx::connection>(CONNECTION_STRING);
+        }
+        catch(std::exception const& ex)
+        {
+            throw std::runtime_error("Cannot connect to database");
+        }
+    }
+
+    pqxx::connection& connection() { return *connection_; }
+    pqxx::connection* connection_ptr() { return connection_.get(); }
+};
+
 
 template<typename T>
 std::string
@@ -56,6 +86,8 @@ get_type_name_from_model(T member)
     using MT = typename decltype(member)::value_type;
 
     constexpr auto column = descriptor::get_attribute<orm::Column>(decltype(member){});
+
+    
 
     if constexpr (
         DataType::bigserial == column.data_type ||
@@ -149,6 +181,9 @@ public:
     {
         t = std::tuple<User, Args...>();
 
+        
+        orm::create_table<User>(*ConnectionGuard::instance().connection_ptr());
+
         routes_.push_back(
             make_shared<route>(http_method::get, "/admin", 
             [&](http_request const& request, http_response& response, path_parameters_type const& parameters, http_context const& context)
@@ -166,11 +201,11 @@ public:
 
                 response.add_header("content-type", "text/html; charset=UTF-8");
 
-                auto current_path = fs::current_path().string();
-
-                std::cout << "Current paht is " << current_path << "\n";
-
                 Environment env;
+
+                auto a =std::filesystem::current_path();
+                auto current_path = a.string() + ("/build/examples/api_admin/");
+
                 Template sidebar = env.parse_template("static/templates/admin/sidebar.html");
                 env.include_template("sidebar", sidebar);
                 Template temp = env.parse_template("static/templates/admin/index.html");
@@ -206,7 +241,8 @@ public:
             {
                 response.add_header("content-type", "text/html; charset=UTF-8");
 
-                auto current_path = fs::current_path().string();
+                auto a = std::filesystem::current_path();
+                auto current_path = a.string() + ("/build/examples/api_admin/");
 
                 std::cout << "Current paht is " << current_path << "\n";
 
@@ -305,7 +341,7 @@ public:
                     argon2d_password_hashing pass_hash;
                     u.password = pass_hash.generate_encoded_digest(u.password);
 
-                    orm::insert(u, *database::ConnectionGuard::instance().connection_ptr());
+                    orm::insert(u, *ConnectionGuard::instance().connection_ptr());
 
                     user_was_registered_with_success = true;
 
@@ -327,7 +363,8 @@ public:
             {
                 response.add_header("content-type", "text/html; charset=UTF-8");
 
-                auto current_path = fs::current_path().string();
+                auto a = std::filesystem::current_path();
+                auto current_path = a.string() + ("/build/examples/api_admin/");
 
                 std::cout << "Current paht is " << current_path << "\n";
 
@@ -426,7 +463,7 @@ public:
                 {
                     auto user_db = orm::select<User>(
                     fmt::format("WHERE username = '{}'", user_p->value),
-                    *database::ConnectionGuard::instance().connection_ptr());
+                    *ConnectionGuard::instance().connection_ptr());
 
                     if(!user_db)
                     {
@@ -450,7 +487,7 @@ public:
 
                     auto result = orm::update<User>(
                         fmt::format("WHERE username = '{}'", user_db->username),
-                        *database::ConnectionGuard::instance().connection_ptr(),
+                        *ConnectionGuard::instance().connection_ptr(),
                         make_pair("first_name", user_db->first_name),
                         make_pair("last_name", user_db->last_name),
                         make_pair("email", user_db->email),
@@ -480,7 +517,7 @@ public:
 
                 auto result = orm::delete_<User>(
                     fmt::format("WHERE username = '{}'", user_p->value),
-                    *database::ConnectionGuard::instance().connection_ptr());
+                    *ConnectionGuard::instance().connection_ptr());
 
                 if(!result)
                 {
@@ -492,19 +529,21 @@ public:
             {
                 response.add_header("content-type", "text/html; charset=UTF-8");
 
-                auto current_path = fs::current_path().string();
+                auto a = std::filesystem::current_path();
+                auto current_path = a.string() + ("/build/examples/api_admin/");
 
                 std::cout << "Current path is " << current_path << "\n";
 
                 auto user_db = orm::select<User>(
                     fmt::format("WHERE username = '{}'", user_p->value),
-                    *database::ConnectionGuard::instance().connection_ptr());
+                    *ConnectionGuard::instance().connection_ptr());
 
                 if(!user_db)
                 {
                     make_internal_server_error_response(response, "User not found");
                     return;
                 }
+                
 
                 Environment env;
                 Template sidebar = env.parse_template("static/templates/admin/sidebar.html");
@@ -549,7 +588,8 @@ public:
 
                 response.add_header("content-type", "text/html; charset=UTF-8");
 
-                auto current_path = fs::current_path().string();
+                auto a = std::filesystem::current_path();
+                auto current_path = a.string() + ("/build/examples/api_admin/");
 
                 std::cout << "Current paht is " << current_path << "\n";
 
@@ -600,7 +640,8 @@ public:
             {
                 response.add_header("content-type", "text/html; charset=UTF-8");
 
-                auto current_path = fs::current_path().string();
+                auto a = std::filesystem::current_path();
+                auto current_path = a.string() + ("/build/examples/api_admin/");
 
                 std::cout << "Current paht is " << current_path << "\n";
 
@@ -701,6 +742,9 @@ public:
 
             std::cout << "Result is " << x.dump() << "\n";
 
+            auto a = std::filesystem::current_path();
+            auto current_path = a.string() + ("/build/examples/api_admin/");
+
             Environment env;
             Template sidebar = env.parse_template("static/templates/admin/sidebar.html");
             env.include_template("sidebar", sidebar);
@@ -800,6 +844,9 @@ public:
 
             auto x = this->get_model_typed_serialized(model_name_p->value, model_name_pk->value);
 
+            auto a = std::filesystem::current_path();
+            auto current_path = a.string() + ("/build/examples/api_admin/");
+
             Environment env;
             Template sidebar = env.parse_template("static/templates/admin/sidebar.html");
             env.include_template("sidebar", sidebar);
@@ -880,7 +927,7 @@ private:
         using namespace refl;
         auto make_vector_t = []<typename T>(T arg) -> std::vector<T>
         {
-            return orm::select_many<T>("", *database::ConnectionGuard::instance().connection_ptr());
+            return orm::select_many<T>("", *ConnectionGuard::instance().connection_ptr());
         };
 
         auto type_finded = get_type(model_name);
@@ -911,7 +958,7 @@ private:
         using namespace refl;
         auto make_vector_t = []<typename T>(T arg) -> std::vector<T>
         {
-            return orm::select_many<T>("", *database::ConnectionGuard::instance().connection_ptr());
+            return orm::select_many<T>("", *ConnectionGuard::instance().connection_ptr());
         };
 
         std::any type_finded = get_type(model_name);
@@ -975,7 +1022,7 @@ private:
         using webcrown::orm::DataType;
         auto get_type_db = []<typename T>(T arg, std::string const& cond) -> std::optional<T>
         {
-            return orm::select<T>(cond, *database::ConnectionGuard::instance().connection_ptr());
+            return orm::select<T>(cond, *ConnectionGuard::instance().connection_ptr());
         };
 
         auto type_finded = get_type(model_name);
@@ -1178,7 +1225,7 @@ private:
 
         auto insert_ = []<typename T>(T arg) -> bool
         {
-            return orm::insert<T>(arg, *database::ConnectionGuard::instance().connection_ptr());
+            return orm::insert<T>(arg, *ConnectionGuard::instance().connection_ptr());
         };
 
         bool result{};
@@ -1224,7 +1271,7 @@ private:
 
         auto mdelete_ = []<typename T>(T arg, std::string const& cond) -> bool
         {
-            return orm::delete_<T>(cond, *database::ConnectionGuard::instance().connection_ptr());
+            return orm::delete_<T>(cond, *ConnectionGuard::instance().connection_ptr());
         };
 
         bool result{};
@@ -1274,7 +1321,7 @@ private:
         {
             return orm::update<T>(
                 fmt::format("WHERE {} = '{}'", pk_name, pk_value),
-                *database::ConnectionGuard::instance().connection_ptr(),
+                *ConnectionGuard::instance().connection_ptr(),
                 data
             );
         };

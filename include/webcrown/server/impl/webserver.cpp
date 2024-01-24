@@ -1,6 +1,7 @@
 #include "webcrown/server/webserver.hpp"
 #include "asio/error_code.hpp"
 #include "asio/io_context.hpp"
+#include "asio/ip/tcp.hpp"
 #include "asio/socket_base.hpp"
 #include "asio/steady_timer.hpp"
 #include "webcrown/server/error.hpp"
@@ -61,8 +62,8 @@ WebSession::disconnect(asio::error_code ec)
         asio::error_code ec;
         // Indicates that this session will no more receives data
         socket_.shutdown(asio::socket_base::shutdown_receive, ec);
-        if(ec)
-            on_error_(ec);
+        //if(ec)
+        //    on_error_(ec);
 
         socket_.close();
     };
@@ -70,7 +71,7 @@ WebSession::disconnect(asio::error_code ec)
     if(!connected_)
     {
         ec = make_error(server_error::server_not_started);
-        on_error_(ec);
+        //on_error_(ec);
         shutdown_session();
         return false;
     }
@@ -421,7 +422,8 @@ WebServer::start()
             on_error_(ec);
             return;
         }
-
+        
+        socket_acceptor_.set_option(asio::ip::tcp::acceptor::reuse_address(true), ec);
         _ = socket_acceptor_.bind(endpoint, ec);
         if(ec.value())
         {
@@ -482,9 +484,9 @@ WebServer::accept()
             };
 
             // Expire session
-            asio::steady_timer expire_session_t(*io_context_);
-            expire_session_t.expires_after(std::chrono::seconds(3));
-            expire_session_t.async_wait(disconnect_session);
+            // asio::steady_timer expire_session_t(*io_context_);
+            // expire_session_t.expires_after(std::chrono::seconds(3));
+            // expire_session_t.async_wait(disconnect_session);
 
 
             // Next server accept

@@ -22,15 +22,12 @@ find_package(libpqxx REQUIRED)
 find_package(nlohmann_json REQUIRED)
 find_package(argon2 REQUIRED)
 
-
 include_directories(${refl-cpp_INCLUDE_DIRS})
 include_directories(${asio_INCLUDE_DIRS})
 include_directories(${date_INCLUDE_DIRS})
 include_directories(${libpqxx_INCLUDE_DIRS})
 include_directories(${nlohmann_json_INCLUDE_DIRS})
 include_directories(${argon2_INCLUDE_DIRS})
-
-
 
 file(GLOB_RECURSE
   SOURCE_FILES
@@ -66,6 +63,7 @@ endif()
 if (ENABLE_EXAMPLES)
   #add_subdirectory(examples/orm)
   add_subdirectory(examples/simple_api)
+  add_subdirectory(examples/api_admin)
 endif()
 
 add_library(webcrown STATIC ${SOURCE_FILES})
