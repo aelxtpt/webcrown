@@ -94,7 +94,21 @@ string_utils::upper(std::string& str)
     return str;
 }
 
+bool 
+string_utils::replace_all(std::string& str, std::string_view substr, std::string_view with)
+{
+    bool result = false;
 
+    size_t pos = 0;
+    while ((pos = str.find(substr, pos)) != std::string::npos)
+    {
+        str.replace(pos, substr.size(), with);
+        pos += with.size();
+        result = true;
+    }
+
+    return result;
+}
 
 }
 }

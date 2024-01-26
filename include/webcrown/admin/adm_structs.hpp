@@ -3,6 +3,13 @@
 #include <refl.hpp>
 #include <vector>
 
+struct ModelMetaData
+{
+    std::string verbose_name;
+    std::string verbose_name_plural;
+    std::string display_entry_name;
+};
+
 struct ModelDescriptionItem
 {
     std::string field_name;

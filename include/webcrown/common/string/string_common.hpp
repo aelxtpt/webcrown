@@ -27,6 +27,8 @@ public:
  
     static std::string& upper(std::string& str);
 
+    static bool replace_all(std::string& str, std::string_view substr, std::string_view with);
+
 
 private:
     static char to_lower_internal(char ch);

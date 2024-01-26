@@ -10,6 +10,7 @@
 #include "webcrown/server/http/status.hpp"
 
 #include <iostream>
+#include <thread>
 
 using std::make_shared;
 namespace http = webcrown::server::http;

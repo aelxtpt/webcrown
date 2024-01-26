@@ -484,9 +484,9 @@ WebServer::accept()
             };
 
             // Expire session
-            // asio::steady_timer expire_session_t(*io_context_);
-            // expire_session_t.expires_after(std::chrono::seconds(3));
-            // expire_session_t.async_wait(disconnect_session);
+            asio::steady_timer expire_session_t(*io_context_);
+            expire_session_t.expires_after(std::chrono::seconds(15));
+            expire_session_t.async_wait(disconnect_session);
 
 
             // Next server accept
