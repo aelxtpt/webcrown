@@ -1,4 +1,6 @@
 #include "asio/error_code.hpp"
+#include "refl.hpp"
+#include "webcrown/orm/databases/postgres/postgres.hpp"
 #include "webcrown/server/http/http_method.hpp"
 #include "webcrown/server/http/http_request.hpp"
 #include "webcrown/server/http/http_response.hpp"
@@ -14,8 +16,24 @@
 
 using std::make_shared;
 namespace http = webcrown::server::http;
-
 using namespace webcrown::server;
+
+const std::string CONNECTION_STRING = "host=localhost port=5432 dbname=test connect_timeout=10 user=postgres password=Xpto@12";
+
+// Model
+struct Course
+{
+    int id{};
+    std::string name{};
+    std::string description{};
+};
+
+REFL_AUTO(
+    type(Course, webcrown::orm::Table{"Course"}),
+    field(id, webcrown::orm::Column{"id", webcrown::orm::DataType::primarykey, 0, webcrown::orm::ColumnFlags::ignore_insert}),
+    field(name, webcrown::orm::Column{"name", webcrown::orm::DataType::text, 0, webcrown::orm::ColumnFlags::none, "UNIQUE", true}),
+    field(description, webcrown::orm::Column{"description", webcrown::orm::DataType::text})
+);
 
 void
 home(http::http_request const& request, http::http_response& response, http::path_parameters_type const& parameters, http::http_context const& context)
@@ -33,6 +51,9 @@ int main()
 {
     try
     {
+        auto connection = make_shared<pqxx::connection>(CONNECTION_STRING);
+        webcrown::orm::create_table<Course>(*connection);
+
         auto http = make_shared<WebServer>("127.0.0.1", 8080, on_error);
 
         auto router_middleware = make_shared<http::routing_middleware>();
@@ -40,8 +61,9 @@ int main()
 
         router_middleware->add_router(make_shared<http::route>(http::http_method::get, "/", home));
 
-        webcrown::admin::AdminManager<> admin_manager;
-        admin_manager.register_models();
+        webcrown::admin::AdminManager<Course> admin_manager;
+        admin_manager.register_models(connection, Course{});
+        
         for(auto const& r : admin_manager.routes())
             router_middleware->add_router(r);
 

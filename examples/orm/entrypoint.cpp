@@ -14,7 +14,7 @@ namespace database {
 using std::make_shared;
 using std::shared_ptr;
 
-static const std::string CONNECTION_STRING = "host=localhost port=5991 dbname=bugbird connect_timeout=10 user=postgres password=Xpto@12";
+static const std::string CONNECTION_STRING = "host=localhost port=5991 dbname=test connect_timeout=10 user=postgres password=Xpto@12";
 
 
 class ConnectionGuard

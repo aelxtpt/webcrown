@@ -559,7 +559,7 @@ bool insert(T& v, ConnectionT& c)
             static_cast<bool>(column.attribute & ColumnFlags::primarykey))
             return;
             
-        // TODO: Fix char type, segment fault  lol
+        // TODO: Fix char type, segment fault 
         //std::cout << refl::runtime::invoke<MT>(v, refl::descriptor::get_display_name(member)) << "\n";
         
         auto&& tv = refl::runtime::invoke<MT>(
@@ -811,7 +811,7 @@ void up_find_value(const std::tuple<Args...> &t, const char* field_name, string&
 {
     if constexpr (I < sizeof...(Args))
     {
-        auto parameter =std::get<I>(t);
+        auto parameter = std::get<I>(t);
         auto fname = std::get<0>(parameter);
         
         if (std::strcmp(fname, field_name) == 0)

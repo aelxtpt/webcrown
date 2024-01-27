@@ -49,36 +49,19 @@ using namespace webcrown::helpers;
 using namespace refl;
 using std::shared_ptr;
 using std::make_shared;
+using std::vector;
+using nlohmann::json;
+using webcrown::server::http::route;
+using webcrown::server::http::path_parameters_type;
+using webcrown::server::http::http_method;
+using webcrown::server::http::http_request;
+using webcrown::server::http::http_context;
+using webcrown::server::http::http_response;
+using webcrown::server::http::http_status;
+using webcrown::server::http::route_parameters_t;
+using webcrown::server::http::auth_authorization_level;
 
-static const std::string CONNECTION_STRING = "host=localhost port=5432 dbname=bugbird connect_timeout=10 user=postgres password=Xpto@12";
-
-class ConnectionGuard
-{
-    shared_ptr<pqxx::connection> connection_;
-public:
-    static __attribute__((no_sanitize("address"))) ConnectionGuard& instance()
-    {
-        static ConnectionGuard instance;
-
-        return instance;
-    }
-
-    ConnectionGuard()
-    {
-        try
-        {
-            connection_ = make_shared<pqxx::connection>(CONNECTION_STRING);
-        }
-        catch(std::exception const& ex)
-        {
-            throw std::runtime_error("Cannot connect to database");
-        }
-    }
-
-    pqxx::connection& connection() { return *connection_; }
-    pqxx::connection* connection_ptr() { return connection_.get(); }
-};
-
+using ConnectionT = pqxx::connection;
 
 template<typename T>
 std::string
@@ -89,8 +72,6 @@ get_type_name_from_model(T member)
     using MT = typename decltype(member)::value_type;
 
     constexpr auto column = descriptor::get_attribute<orm::Column>(decltype(member){});
-
-    
 
     if constexpr (
         DataType::bigserial == column.data_type ||
@@ -155,22 +136,6 @@ get_type_name_from_model(T member)
     return "";
 }
 
-
-using std::vector;
-using std::shared_ptr;
-using std::make_shared;
-
-using nlohmann::json;
-using webcrown::server::http::route;
-using webcrown::server::http::path_parameters_type;
-using webcrown::server::http::http_method;
-using webcrown::server::http::http_request;
-using webcrown::server::http::http_context;
-using webcrown::server::http::http_response;
-using webcrown::server::http::http_status;
-using webcrown::server::http::route_parameters_t;
-using webcrown::server::http::auth_authorization_level;
-
 template<typename... Args>
 class AdminManager
 {
@@ -180,11 +145,11 @@ public:
 
     decltype(routes_) routes() const { return routes_; }
 
-    void register_models(Args &&... args)
+    void register_models(shared_ptr<ConnectionT> connection, Args &&... args)
     {
         t = std::tuple<User, Args...>();
 
-        orm::create_table<User>(*ConnectionGuard::instance().connection_ptr());
+        orm::create_table<User>(*connection.get());
 
         routes_.push_back(
             make_shared<route>(http_method::get, "/admin", 
@@ -193,7 +158,6 @@ public:
             // Just for convenience
             using namespace inja;
             using std::make_pair;
-            namespace fs = std::filesystem;
 
             std::string html;
 
@@ -227,12 +191,11 @@ public:
         ));
 
         routes_.push_back(make_shared<route>(http_method::get, "/admin/users",
-        [&](http_request const& request, http_response& response, path_parameters_type const& parameters, http_context const& context)
+        [&, connection](http_request const& request, http_response& response, path_parameters_type const& parameters, http_context const& context)
         {
             // Just for convenience
             using namespace inja;
             using std::make_pair;
-            namespace fs = std::filesystem;
 
             std::string html;
 
@@ -240,17 +203,12 @@ public:
             {
                 response.add_header("content-type", "text/html; charset=UTF-8");
 
-                auto a = std::filesystem::current_path();
-                auto current_path = a.string() + ("/build/examples/api_admin/");
-
-                std::cout << "Current paht is " << current_path << "\n";
-
                 Environment env;
                 Template sidebar = env.parse_template("static/templates/admin/sidebar.html");
                 env.include_template("sidebar", sidebar);
                 Template temp = env.parse_template("static/templates/admin/users_list.html");
 
-                auto users_data = this->get_simple_serialized("Users");
+                auto users_data = this->get_simple_serialized("Users", connection);
 
                 std::cout << users_data.dump() << "\n";
 
@@ -270,13 +228,12 @@ public:
         }));
 
         auto admin_index_users_add = 
-        [&](http_request const& request, http_response& response, path_parameters_type const& parameters, http_context const& context)
+        [&, connection](http_request const& request, http_response& response, path_parameters_type const& parameters, http_context const& context)
         {
             // Just for convenience
             using namespace inja;
             using std::make_pair;
             using std::string;
-            namespace fs = std::filesystem;
 
             std::string html;
             bool user_was_registered_with_success = false;
@@ -286,8 +243,6 @@ public:
 
             if(request.method() == http_method::post)
             {
-                std::cout << "Post method was called\n";
-
                 using namespace boost;
 
                 std::string s = request.body();
@@ -311,8 +266,6 @@ public:
                         boost::algorithm::trim(key);
                         boost::algorithm::trim(value);
 
-                        std::cout << key << " = " << value << std::endl;
-
                         user_data.insert(make_pair(key, value));
                     }
                 }
@@ -323,7 +276,6 @@ public:
                     user_data.insert(make_pair("user_is_staff_status", "off"));
                 else if(!user_data.contains("user_is_superuser_status"))
                     user_data.insert(make_pair("user_is_superuser_status", "off"));
-
 
                 try 
                 {
@@ -340,14 +292,11 @@ public:
                     argon2d_password_hashing pass_hash;
                     u.password = pass_hash.generate_encoded_digest(u.password);
 
-                    orm::insert(u, *ConnectionGuard::instance().connection_ptr());
+                    orm::insert(u, *connection.get());
 
                     user_was_registered_with_success = true;
 
                     username = u.username;
-
-                    std::cout << "User was registered with success\n";
-
                 } 
                 catch (std::exception const& ex)
                 {
@@ -362,17 +311,12 @@ public:
             {
                 response.add_header("content-type", "text/html; charset=UTF-8");
 
-                auto a = std::filesystem::current_path();
-                auto current_path = a.string() + ("/build/examples/api_admin/");
-
-                std::cout << "Current paht is " << current_path << "\n";
-
                 Environment env;
                 Template sidebar = env.parse_template("static/templates/admin/sidebar.html");
                 env.include_template("sidebar", sidebar);
                 Template temp = env.parse_template("static/templates/admin/user_add.html");
 
-                auto users_data = this->many_serialized("Users");
+                auto users_data = this->many_serialized("Users", connection);
 
                 std::cout << users_data.dump() << "\n";
 
@@ -396,13 +340,12 @@ public:
         };
 
         auto admin_index_users_edit = 
-        [&](http_request const& request, http_response& response, path_parameters_type const& parameters, http_context const& context)
+        [&, connection](http_request const& request, http_response& response, path_parameters_type const& parameters, http_context const& context)
         {
             // Just for convenience
             using namespace inja;
             using std::make_pair;
             using std::string;
-            namespace fs = std::filesystem;
 
             std::string html;
             bool user_was_edited_with_success = false;
@@ -419,8 +362,6 @@ public:
 
             if(request.method() == http_method::post)
             {
-                std::cout << "Post method was called\n";
-
                 using namespace boost;
 
                 std::string s = request.body();
@@ -462,7 +403,7 @@ public:
                 {
                     auto user_db = orm::select<User>(
                     fmt::format("WHERE username = '{}'", user_p->value),
-                    *ConnectionGuard::instance().connection_ptr());
+                    *connection.get());
 
                     if(!user_db)
                     {
@@ -486,7 +427,7 @@ public:
 
                     auto result = orm::update<User>(
                         fmt::format("WHERE username = '{}'", user_db->username),
-                        *ConnectionGuard::instance().connection_ptr(),
+                        *connection.get(),
                         make_pair("first_name", user_db->first_name),
                         make_pair("last_name", user_db->last_name),
                         make_pair("email", user_db->email),
@@ -497,10 +438,6 @@ public:
                     );
 
                     user_was_edited_with_success = true;
-
-                    if(result)
-                        std::cout << "User was edited with success\n";
-
                 } 
                 catch (std::exception const& ex)
                 {
@@ -512,11 +449,9 @@ public:
             }    
             else if(request.method() == http_method::delete_)
             {
-                std::cout << "Delete was called";
-
                 auto result = orm::delete_<User>(
                     fmt::format("WHERE username = '{}'", user_p->value),
-                    *ConnectionGuard::instance().connection_ptr());
+                    *connection.get());
 
                 if(!result)
                 {
@@ -528,14 +463,9 @@ public:
             {
                 response.add_header("content-type", "text/html; charset=UTF-8");
 
-                auto a = std::filesystem::current_path();
-                auto current_path = a.string() + ("/build/examples/api_admin/");
-
-                std::cout << "Current path is " << current_path << "\n";
-
                 auto user_db = orm::select<User>(
                     fmt::format("WHERE username = '{}'", user_p->value),
-                    *ConnectionGuard::instance().connection_ptr());
+                    *connection.get());
 
                 if(!user_db)
                 {
@@ -543,7 +473,6 @@ public:
                     return;
                 }
                 
-
                 Environment env;
                 Template sidebar = env.parse_template("static/templates/admin/sidebar.html");
                 env.include_template("sidebar", sidebar);
@@ -578,7 +507,6 @@ public:
             // Just for convenience
             using namespace inja;
             using std::make_pair;
-            namespace fs = std::filesystem;
 
             std::string html;
 
@@ -586,11 +514,6 @@ public:
             {
 
                 response.add_header("content-type", "text/html; charset=UTF-8");
-
-                auto a = std::filesystem::current_path();
-                auto current_path = a.string() + ("/build/examples/api_admin/");
-
-                std::cout << "Current paht is " << current_path << "\n";
 
                 Environment env;
                 Template sidebar = env.parse_template("static/templates/admin/sidebar.html");
@@ -624,7 +547,6 @@ public:
             // Just for convenience
             using namespace inja;
             using std::make_pair;
-            namespace fs = std::filesystem;
 
             auto model_name_p = get_parameter(parameters, "model_name");
             if(!model_name_p)
@@ -639,11 +561,6 @@ public:
             {
                 response.add_header("content-type", "text/html; charset=UTF-8");
 
-                auto a = std::filesystem::current_path();
-                auto current_path = a.string() + ("/build/examples/api_admin/");
-
-                std::cout << "Current paht is " << current_path << "\n";
-
                 Environment env;
 
                 env.add_callback("get_field_is_admin_identifier", 1, 
@@ -656,7 +573,7 @@ public:
                 env.include_template("sidebar", sidebar);
                 Template temp = env.parse_template("static/templates/admin/model_detail.html");
 
-                auto model_serialized = this->many_serialized(model_name_p->value);
+                auto model_serialized = this->many_serialized(model_name_p->value, connection);
                 json data;
                 data["model_list"] = model_serialized;
                 data["model_name"] = model_name_p->value;
@@ -727,7 +644,7 @@ public:
                     }
                 }
 
-                if(!this->insert_model(user_data, model_name_p->value))
+                if(!this->insert_model(user_data, model_name_p->value, connection))
                 {
                     std::cout << "Failed to insert model\n";
                     model_was_registered_with_fail = true;
@@ -738,11 +655,6 @@ public:
             }    
 
             auto x = this->get_typed_serialized(model_name_p->value);
-
-            std::cout << "Result is " << x.dump() << "\n";
-
-            auto a = std::filesystem::current_path();
-            auto current_path = a.string() + ("/build/examples/api_admin/");
 
             Environment env;
             Template sidebar = env.parse_template("static/templates/admin/sidebar.html");
@@ -822,7 +734,7 @@ public:
                     }
                 }
 
-                if(!this->update_model(model_name_p->value, model_data, model_name_pk->value))
+                if(!this->update_model(model_name_p->value, model_data, model_name_pk->value, connection))
                 {
                     model_was_edited_with_fail = true;
                     model_edit_fail_reason = "Failed to update model";
@@ -834,14 +746,14 @@ public:
             {
                 std::cout << "Delete method was called\n";
                 
-                if(!this->delete_model(model_name_p->value, model_name_pk->value))
+                if(!this->delete_model(model_name_p->value, model_name_pk->value, connection))
                 {
                     std::cout << "Error on delete model " << model_name_p->value << "\n";
                 }
 
             }
 
-            auto x = this->get_model_typed_serialized(model_name_p->value, model_name_pk->value);
+            auto x = this->get_model_typed_serialized(model_name_p->value, model_name_pk->value, connection);
 
             auto a = std::filesystem::current_path();
             auto current_path = a.string() + ("/build/examples/api_admin/");
@@ -920,13 +832,13 @@ private:
         //auto xa = runtime_get(t, type_index_found);
     }
     
-    nlohmann::json get_simple_serialized(std::string const& model_name)
+    nlohmann::json get_simple_serialized(std::string const& model_name, shared_ptr<ConnectionT> connection)
     {
         using nlohmann::json;
         using namespace refl;
-        auto make_vector_t = []<typename T>(T arg) -> std::vector<T>
+        auto make_vector_t = [connection]<typename T>(T arg) -> std::vector<T>
         {
-            return orm::select_many<T>("", *ConnectionGuard::instance().connection_ptr());
+            return orm::select_many<T>("", *connection.get());
         };
 
         auto type_finded = get_type(model_name);
@@ -951,13 +863,13 @@ private:
         return data;
     }
 
-    nlohmann::json many_serialized(std::string const& model_name)
+    nlohmann::json many_serialized(std::string const& model_name, shared_ptr<ConnectionT> connection)
     {
         using nlohmann::json;
         using namespace refl;
-        auto make_vector_t = []<typename T>(T arg) -> std::vector<T>
+        auto make_vector_t = [connection]<typename T>(T arg) -> std::vector<T>
         {
-            return orm::select_many<T>("", *ConnectionGuard::instance().connection_ptr());
+            return orm::select_many<T>("", *connection.get());
         };
 
         std::any type_finded = get_type(model_name);
@@ -1014,14 +926,14 @@ private:
         return data;
     }
 
-    nlohmann::json get_model_typed_serialized(std::string const& model_name, std::string const& pk)
+    nlohmann::json get_model_typed_serialized(std::string const& model_name, std::string const& pk, shared_ptr<ConnectionT> connection)
     {
         using nlohmann::json;
         using namespace refl;
         using webcrown::orm::DataType;
-        auto get_type_db = []<typename T>(T arg, std::string const& cond) -> std::optional<T>
+        auto get_type_db = [connection]<typename T>(T arg, std::string const& cond) -> std::optional<T>
         {
-            return orm::select<T>(cond, *ConnectionGuard::instance().connection_ptr());
+            return orm::select<T>(cond, *connection.get());
         };
 
         auto type_finded = get_type(model_name);
@@ -1039,7 +951,7 @@ private:
                 
                 ModelData result{};
 
-                // bem porco
+                // poor
 
                 std::string pk_name;
                 
@@ -1208,7 +1120,7 @@ private:
                     }
                 });
 
-                
+        
             }
 
         });
@@ -1217,14 +1129,14 @@ private:
         return serialize_admin(field_mapped);
     }
 
-    bool insert_model(std::map<std::string, std::string> const& data, std::string const& model_name)
+    bool insert_model(std::map<std::string, std::string> const& data, std::string const& model_name, shared_ptr<ConnectionT> connection)
     {
         using namespace refl;
         auto type_finded = get_type(model_name);
 
-        auto insert_ = []<typename T>(T arg) -> bool
+        auto insert_ = [connection]<typename T>(T arg) -> bool
         {
-            return orm::insert<T>(arg, *ConnectionGuard::instance().connection_ptr());
+            return orm::insert<T>(arg, *connection.get());
         };
 
         bool result{};
@@ -1263,14 +1175,14 @@ private:
         return result;
     }
 
-    bool delete_model(std::string const& model_name, std::string const& pk_value)
+    bool delete_model(std::string const& model_name, std::string const& pk_value, shared_ptr<ConnectionT> connection)
     {
         using namespace refl;
         auto type_finded = get_type(model_name);
 
-        auto mdelete_ = []<typename T>(T arg, std::string const& cond) -> bool
+        auto mdelete_ = [connection]<typename T>(T arg, std::string const& cond) -> bool
         {
-            return orm::delete_<T>(cond, *ConnectionGuard::instance().connection_ptr());
+            return orm::delete_<T>(cond, *connection.get());
         };
 
         bool result{};
@@ -1308,7 +1220,11 @@ private:
         return result;
     }
 
-    bool update_model(std::string const& model_name, std::unordered_map<std::string, std::string> const& data, std::string const& pk_value)
+    bool update_model(
+        std::string const& model_name, 
+        std::unordered_map<std::string, std::string> const& data, 
+        std::string const& pk_value,
+        shared_ptr<ConnectionT> connection)
     {
         using namespace refl;
         using std::string;
@@ -1316,11 +1232,11 @@ private:
 
         auto type_finded = get_type(model_name);
 
-        auto update_ = [&]<typename T>(T arg, string const& pk_name) -> bool
+        auto update_ = [&, connection]<typename T>(T arg, string const& pk_name) -> bool
         {
             return orm::update<T>(
                 fmt::format("WHERE {} = '{}'", pk_name, pk_value),
-                *ConnectionGuard::instance().connection_ptr(),
+                *connection.get(),
                 data
             );
         };
