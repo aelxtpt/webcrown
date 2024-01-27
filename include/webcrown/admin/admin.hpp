@@ -180,94 +180,11 @@ public:
 
     decltype(routes_) routes() const { return routes_; }
 
-    void serve_folder_as_static()
-    {
-        namespace fs = std::filesystem;
-
-        fs::path p("static/templates/bugbird");
-        std::error_code ec;
-        fs::recursive_directory_iterator it(p, fs::directory_options::follow_directory_symlink, ec);
-        fs::recursive_directory_iterator end;
-
-        for(; it != end; ++it)
-        {
-            fs::path current_entry = *it;
-            if(fs::is_directory(current_entry))
-                continue;
-
-            std::string final_path = current_entry.string();
-            common::string_utils::replace_all(final_path, p.string(), "");
-            
-            auto ext = current_entry.extension().string();
-            if(
-                ext != ".css" &&
-                ext != ".jpg" &&
-                ext != ".jpeg" &&
-                ext != ".png" &&
-                ext != ".woff" &&
-                ext != ".woff2" &&
-                ext != ".svg" &&
-                ext != ".js")
-            {
-                continue;
-            }
-
-            std::fstream fs(current_entry);
-            if(!fs)
-                return;
-            
-            std::stringstream buffer;
-            buffer << fs.rdbuf();
-            auto html = buffer.str();
-
-            string content_type;
-            if(ext == ".js")
-                content_type = "text/javascript";
-            else if(ext == ".gif")
-                content_type = "image/gif";
-            else if(ext == ".htm")
-                content_type = "text/html";
-            else if(ext == ".html")
-                content_type = "text/html";
-            else if(ext == ".ico")
-                content_type = "image/vnd.microsoft.icon";
-            else if(ext == ".jpeg")
-                content_type = "image/jpeg";
-            else if(ext == ".jpg")
-                content_type = "image/jpeg";
-            else if(ext == ".svg")
-                content_type = "image/svg+xml";
-            else if(ext == ".css")
-                content_type = "text/css";
-
-            routes_.push_back(
-                make_shared<route>(http_method::get, final_path,
-                [html, content_type](http_request const& request, http_response& response, path_parameters_type const& parameters, http_context const& context)
-                {
-                    try
-                    {
-                        response.set_body(html);
-                        response.add_header("Cache-Control", fmt::format("max-age={}", std::chrono::seconds(60).count()));
-                        response.add_header("Content-Type", content_type);
-                        
-                    }
-                    catch(std::exception const& ex) 
-                    {
-                        response.set_status(http_status::internal_server_error);
-                    }
-                })
-            );
-        }
-
-    }
-
     void register_models(Args &&... args)
     {
         t = std::tuple<User, Args...>();
 
         orm::create_table<User>(*ConnectionGuard::instance().connection_ptr());
-
-        serve_folder_as_static();
 
         routes_.push_back(
             make_shared<route>(http_method::get, "/admin", 
@@ -288,9 +205,9 @@ public:
 
                 Environment env;
 
-                Template sidebar = env.parse_template("static/templates/bugbird/sidebar.html");
+                Template sidebar = env.parse_template("static/templates/admin/sidebar.html");
                 env.include_template("sidebar", sidebar);
-                Template temp = env.parse_template("static/templates/bugbird/index.html");
+                Template temp = env.parse_template("static/templates/admin/index.html");
 
                 json data;
                 data["models"] = names;

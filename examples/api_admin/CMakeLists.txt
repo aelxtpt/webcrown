@@ -9,6 +9,19 @@ file(GLOB_RECURSE
     ${PROJECT_SOURCE_DIR}/src/*.cpp
 )
 
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY
+        ${CMAKE_BINARY_DIR}/bin
+        )
+
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY
+        ${CMAKE_BINARY_DIR}/lib
+        )
+
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY
+        ${CMAKE_BINARY_DIR}/bin
+        )
+
+
 include_directories(${CMAKE_SOURCE_DIR}/include)
 
 find_package(refl-cpp REQUIRED)

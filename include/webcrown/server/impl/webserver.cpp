@@ -34,6 +34,7 @@ WebSession::connect()
     bytes_sent_ = 0;
 
     receive_buffer_.resize(option_receive_buffer_size());
+    socket_.set_option(asio::ip::tcp::socket::keep_alive(true));
 
     connected_ = true;
 
@@ -72,7 +73,6 @@ WebSession::disconnect(asio::error_code ec)
     {
         ec = make_error(server_error::server_not_started);
         //on_error_(ec);
-        shutdown_session();
         return false;
     }
 
@@ -314,7 +314,7 @@ WebSession::try_send()
 
     // Async write with the write handler
     sending_ = true;
-    auto self = shared_from_this();
+    auto self(this->shared_from_this());
     auto async_write_handler = [this, self](std::error_code ec, size_t size)
     {
         sending_ = false;
@@ -463,6 +463,7 @@ WebServer::accept()
 
         auto session_id = ++last_session_id_;
         auto session = create_session(session_id);
+        register_session(session);
 
         auto async_accept_handler = [this, session_id, session](std::error_code ec)
         {
@@ -472,7 +473,7 @@ WebServer::accept()
                 return;
             }
 
-            register_session(session);
+            
             session->connect();
 
             auto disconnect_session = [session_id, session](asio::error_code ec)
@@ -484,9 +485,9 @@ WebServer::accept()
             };
 
             // Expire session
-            asio::steady_timer expire_session_t(*io_context_);
-            expire_session_t.expires_after(std::chrono::seconds(15));
-            expire_session_t.async_wait(disconnect_session);
+//            asio::steady_timer expire_session_t(*io_context_);
+//            expire_session_t.expires_after(std::chrono::seconds(15));
+//            expire_session_t.async_wait(disconnect_session);
 
 
             // Next server accept

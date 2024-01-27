@@ -42,6 +42,8 @@ file(GLOB_RECURSE
         ${PROJECT_SOURCE_DIR}/include/webcrown/admin/static/*
 )
 
+file(REMOVE_RECURSE ${CMAKE_BINARY_DIR}/bin/static)
+
 foreach(file ${STATIC_FILES}) 
     get_filename_component(filename ${file} NAME)
     get_filename_component(dir ${file} DIRECTORY)
