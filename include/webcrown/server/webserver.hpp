@@ -21,12 +21,6 @@ class WebSession : public std::enable_shared_from_this<WebSession>
 {
     using OnCb = std::function<void(asio::error_code ec)>;
 
-    // Statistics
-    uint64_t bytes_pending_;
-    uint64_t bytes_sending_;
-    uint64_t bytes_received_;
-    uint64_t bytes_sent_;
-
     shared_ptr<asio::io_context> io_context_;
     shared_ptr<WebServer> server_;
     asio::ip::tcp::socket socket_;

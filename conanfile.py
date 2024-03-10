@@ -43,7 +43,6 @@ class CompressorRecipe(ConanFile):
         self.requires("nlohmann_json/3.11.3")
         self.requires("libpqxx/7.6.1")
         self.requires("refl-cpp/0.12.4")
-        self.requires("argon2/20190702")
         self.requires("fmt/10.0.0")
         self.requires("inja/3.4.0")
         self.requires("boost/1.81.0")

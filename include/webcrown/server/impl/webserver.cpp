@@ -17,7 +17,6 @@ WebSession::WebSession(uint64_t session_id, shared_ptr<WebServer> server, OnCb& 
     , socket_(*server->io_context_)
     , on_error_(cb)
 {
-
 }
 
 WebSession::~WebSession()
